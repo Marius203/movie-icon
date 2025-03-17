@@ -1,0 +1,10 @@
+lab1
+silver : visual plot to show some sort of filtering (rating <5  red , 5-8 yellow , 8-10 green)
+         test everything
+
+gold   : pagination
+         generate a metric fuck-ton of data
+         the user can choose how many elements are on a page
+         charts: pie / bar chart that presents a statistic
+         make a separate thread that populates the list with faker and updates the pie chart in real time
+         
