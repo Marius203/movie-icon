@@ -1,10 +1,60 @@
 <!-- javascript -->
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useMoviesStore } from '@/stores/movies'
 import MovieClassificationChart from './MovieClassificationChart.vue'
 
 const moviesStore = useMoviesStore()
+
+// Worker setup
+let movieWorker = null
+let generationInterval = null
+const isGenerating = ref(false)
+
+// Initialize worker and start movie generation
+onMounted(() => {
+  // Create worker
+  movieWorker = new Worker(new URL('../workers/movieGenerator.js', import.meta.url), {
+    type: 'module'
+  })
+
+  // Handle messages from worker
+  movieWorker.onmessage = (event) => {
+    if (event.data.type === 'MOVIES_GENERATED') {
+      event.data.movies.forEach(movie => {
+        moviesStore.addMovie(movie)
+      })
+    }
+  }
+})
+
+// Toggle movie generation
+const toggleGeneration = () => {
+  if (isGenerating.value) {
+    // Stop generation
+    if (generationInterval) {
+      clearInterval(generationInterval)
+      generationInterval = null
+    }
+    isGenerating.value = false
+  } else {
+    // Start generation
+    generationInterval = setInterval(() => {
+      movieWorker.postMessage({ type: 'GENERATE_MOVIES', count: 1 })
+    }, 50)
+    isGenerating.value = true
+  }
+}
+
+// Cleanup worker and interval on component unmount
+onUnmounted(() => {
+  if (movieWorker) {
+    movieWorker.terminate()
+  }
+  if (generationInterval) {
+    clearInterval(generationInterval)
+  }
+})
 
 // Pagination
 const currentPage = ref(1)
@@ -110,6 +160,57 @@ const resetSort = () => {
   // Reset to first page when sorting changes
   currentPage.value = 1
 }
+
+// Add this computed property for pagination buttons
+const paginationButtons = computed(() => {
+  const buttons = []
+  const maxVisiblePages = 5
+
+  if (totalPages.value <= maxVisiblePages) {
+    // If total pages is less than or equal to max visible pages, show all
+    for (let i = 1; i <= totalPages.value; i++) {
+      buttons.push(i)
+    }
+  } else {
+    // Always show first page
+    buttons.push(1)
+
+    // Calculate start and end of visible range
+    let start = Math.max(2, currentPage.value - 1)
+    let end = Math.min(totalPages.value - 1, currentPage.value + 1)
+
+    // Adjust if we're near the start
+    if (currentPage.value <= 3) {
+      start = 2
+      end = 4
+    }
+    // Adjust if we're near the end
+    else if (currentPage.value >= totalPages.value - 2) {
+      start = totalPages.value - 3
+      end = totalPages.value - 1
+    }
+
+    // Add ellipsis after first page if needed
+    if (start > 2) {
+      buttons.push('...')
+    }
+
+    // Add middle pages
+    for (let i = start; i <= end; i++) {
+      buttons.push(i)
+    }
+
+    // Add ellipsis before last page if needed
+    if (end < totalPages.value - 1) {
+      buttons.push('...')
+    }
+
+    // Always show last page
+    buttons.push(totalPages.value)
+  }
+
+  return buttons
+})
 </script>
 
 <!-- html -->
@@ -153,6 +254,17 @@ const resetSort = () => {
         :class="{ active: moviesStore.sortOption === 'default' }"
       >
         Reset Sort
+      </button>
+    </div>
+
+    <!-- Auto-generate control -->
+    <div class="auto-generate-control">
+      <button
+        @click="toggleGeneration"
+        class="generate-btn"
+        :class="{ active: isGenerating }"
+      >
+        {{ isGenerating ? 'Stop Auto-Generation' : 'Start Auto-Generation' }}
       </button>
     </div>
 
@@ -233,11 +345,14 @@ const resetSort = () => {
 
       <div class="page-numbers">
         <button
-          v-for="page in totalPages"
+          v-for="page in paginationButtons"
           :key="page"
-          @click="goToPage(page)"
+          @click="page === '...' ? null : goToPage(page)"
           class="page-number"
-          :class="{ active: currentPage === page }"
+          :class="{ 
+            active: currentPage === page,
+            ellipsis: page === '...'
+          }"
         >
           {{ page }}
         </button>
@@ -328,6 +443,18 @@ const resetSort = () => {
 .page-number.active {
   background-color: #d4af37;
   color: #1a1f3c;
+}
+
+.page-number.ellipsis {
+  background: none;
+  border: none;
+  cursor: default;
+  color: #d4af37;
+  font-weight: bold;
+}
+
+.page-number.ellipsis:hover {
+  background: none;
 }
 
 /* Sorting controls style */
@@ -658,5 +785,31 @@ h1 {
 .movies-per-page-select option {
   background-color: #2a2f4c;
   color: #d4af37;
+}
+
+.auto-generate-control {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.generate-btn {
+  background-color: #2a2f4c;
+  color: #d4af37;
+  border: 2px solid #d4af37;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.generate-btn:hover {
+  background-color: #3a3f5c;
+}
+
+.generate-btn.active {
+  background-color: #d4af37;
+  color: #1a1f3c;
 }
 </style>
