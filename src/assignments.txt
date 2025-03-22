@@ -1,4 +1,3 @@
-lab1
 silver : visual plot to show some sort of filtering (rating <5  red , 5-8 yellow , 8-10 green)
          test everything
 
