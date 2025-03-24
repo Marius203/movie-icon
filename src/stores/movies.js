@@ -64,18 +64,34 @@ export const useMoviesStore = defineStore('movies', () => {
       poster:
         'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg',
     },
-    //   {
-    //     "title": "Pulp Fiction",
-    //     "director": "Quentin Tarantino",
-    //     "releaseDate": "1994-10-14",
-    //     "rating": 8.9,
-    //     "description": "The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
-    //     "poster": "https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg"
-    //   }
+      {
+        title: "Pulp Fiction",
+        director: "Quentin Tarantino",
+        releaseDate: "1994-10-14",
+        rating: 8.9,
+        description: "The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
+        poster: "https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg"
+      }
   ])
 
   // Current sort option
   const sortOption = ref('default')
+
+  // Movies per page option
+  const moviesPerPage = ref(5)
+
+  // Set movies per page
+  function setMoviesPerPage(value) {
+    moviesPerPage.value = value
+  }
+
+  // Computed property for movie classification
+  const getMovieClassification = (releaseDate) => {
+    const year = new Date(releaseDate).getFullYear()
+    if (year < 1980) return '👴' // Old man emoji for oldies
+    if (year <= 2010) return '👨' // Man emoji for iconic
+    return '👶' // Baby emoji for new gens
+  }
 
   // Computed property for sorted movies
   const sortedMovies = computed(() => {
@@ -91,6 +107,14 @@ export const useMoviesStore = defineStore('movies', () => {
         return sortedArray.sort((a, b) => a.rating - b.rating)
       case 'ratingDesc':
         return sortedArray.sort((a, b) => b.rating - a.rating)
+      case 'classification':
+        return sortedArray.sort((a, b) => {
+          const classA = getMovieClassification(a.releaseDate)
+          const classB = getMovieClassification(b.releaseDate)
+          // Define the order of classifications
+          const order = { '👴': 0, '👨': 1, '👶': 2 }
+          return order[classA] - order[classB]
+        })
       default:
         return sortedArray
     }
@@ -138,5 +162,8 @@ export const useMoviesStore = defineStore('movies', () => {
     addMovie,
     removeMovie,
     updateMovieRating,
+    getMovieClassification,
+    moviesPerPage,
+    setMoviesPerPage,
   }
 })
