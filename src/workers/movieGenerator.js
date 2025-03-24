@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker'
 
 // Function to generate a random movie
 function generateMovie() {
-  const year = faker.number.int({ min: 1920, max: 2024 })
+  const year = faker.number.int({ min: 1950, max: 2024 })
   const month = faker.number.int({ min: 1, max: 12 }).toString().padStart(2, '0')
   const day = faker.number.int({ min: 1, max: 28 }).toString().padStart(2, '0')
   const releaseDate = `${year}-${month}-${day}`

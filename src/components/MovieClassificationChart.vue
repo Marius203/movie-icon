@@ -19,7 +19,7 @@ const chartData = computed(() => {
     datasets: [
       {
         data: [oldies, iconic, newGen],
-        backgroundColor: ['#d4af37', '#c19b2e', '#a88a1f'],
+        backgroundColor: ['#d4af37', '#ff5733', '#3399ff'],
         borderColor: ['#1a1f3c', '#1a1f3c', '#1a1f3c'],
         borderWidth: 2,
       },
