@@ -3,10 +3,15 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useMoviesStore } from '@/stores/movies'
 import { useUsersStore } from '@/stores/users'
+import MovieDetailsPopup from './MovieDetailsPopup.vue'
 // import MovieClassificationChart from './MovieClassificationChart.vue'
 
 const moviesStore = useMoviesStore()
 const userMoviesStore = useUsersStore()
+
+// Popup state
+const selectedMovie = ref(null)
+const isPopupOpen = ref(false)
 
 // Pagination
 const currentPage = ref(1)
@@ -131,9 +136,21 @@ const paginationButtons = computed(() => {
   return buttons
 })
 
-// Method to add a movie to the store (simulates adding to personal list for now)
-const stealMovie = (movie) => {
-  // Check if the movie already exists in the user's list based on title, director, and release date
+// Handle movie click
+const handleMovieClick = (movie) => {
+  selectedMovie.value = movie
+  isPopupOpen.value = true
+}
+
+// Handle popup close
+const handlePopupClose = () => {
+  isPopupOpen.value = false
+  selectedMovie.value = null
+}
+
+// Handle steal movie
+const handleStealMovie = (movie) => {
+  // Check if the movie already exists in the user's list
   const exists = userMoviesStore.userMovies.some(
     (m) =>
       m.title === movie.title &&
@@ -148,8 +165,9 @@ const stealMovie = (movie) => {
 
   // Add a deep copy of the movie object to avoid reactivity issues
   const movieCopy = JSON.parse(JSON.stringify(movie))
-  userMoviesStore.addMovie(movieCopy) // Add to the user store
-  alert(`${movie.title} 'stolen' and added to your personal list!`) // Confirmation message
+  userMoviesStore.addMovie(movieCopy)
+  alert(`${movie.title} 'stolen' and added to your personal list!`)
+  handlePopupClose()
 }
 </script>
 
@@ -229,7 +247,8 @@ const stealMovie = (movie) => {
       <li
         v-for="(movie, index) in paginatedMovies"
         :key="movie.id"
-        class="border-2 border-yellow-600 rounded-lg p-4 mb-5 shadow-md bg-slate-800 w-11/12 mx-auto"
+        class="border-2 border-yellow-600 rounded-lg p-4 mb-5 shadow-md bg-slate-800 w-11/12 mx-auto cursor-pointer hover:border-yellow-500 transition-colors"
+        @click="handleMovieClick(movie)"
       >
         <div class="flex justify-between items-center mb-2 border-b border-yellow-600 pb-2">
           <h2
@@ -240,16 +259,6 @@ const stealMovie = (movie) => {
               moviesStore.getMovieClassification(movie.releaseDate)
             }}</span>
           </h2>
-          <!-- Action buttons container -->
-          <div class="flex items-center gap-2">
-            <!-- Steal this button -->
-            <button
-              @click="stealMovie(movie)"
-              class="text-green-400 hover:text-green-300 text-xs px-2 py-1 border border-green-400 rounded hover:bg-green-400 hover:text-white transition duration-150"
-            >
-              Steal this
-            </button>
-          </div>
         </div>
 
         <div class="pt-2 flex items-start">
@@ -316,6 +325,15 @@ const stealMovie = (movie) => {
       </button>
     </div>
   </div>
+
+  <!-- Movie Details Popup -->
+  <MovieDetailsPopup
+    v-if="selectedMovie"
+    :movie="selectedMovie"
+    :is-open="isPopupOpen"
+    @close="handlePopupClose"
+    @steal="handleStealMovie"
+  />
 </template>
 
 <!-- css -->

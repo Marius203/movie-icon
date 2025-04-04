@@ -191,7 +191,7 @@ const paginationButtons = computed(() => {
   <h1
     class="font-sans font-bold text-center text-blue-400 mb-8 text-4xl pb-2.5 border-b-2 border-blue-400 tracking-wide max-w-3xl mx-auto"
   >
-    My Taste - Personal Movie List
+    My Taste
   </h1>
 
   <!-- Movie Classification Chart (Optional for this page) -->
