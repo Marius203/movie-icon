@@ -10,9 +10,15 @@ const moviesStore = useMoviesStore()
 
 const chartData = computed(() => {
   const movies = moviesStore.movies
-  const oldies = movies.filter(movie => moviesStore.getMovieClassification(movie.releaseDate) === '👴').length
-  const iconic = movies.filter(movie => moviesStore.getMovieClassification(movie.releaseDate) === '👨').length
-  const newGen = movies.filter(movie => moviesStore.getMovieClassification(movie.releaseDate) === '👶').length
+  const oldies = movies.filter(
+    (movie) => moviesStore.getMovieClassification(movie.releaseDate) === '👴',
+  ).length
+  const iconic = movies.filter(
+    (movie) => moviesStore.getMovieClassification(movie.releaseDate) === '👨',
+  ).length
+  const newGen = movies.filter(
+    (movie) => moviesStore.getMovieClassification(movie.releaseDate) === '👶',
+  ).length
 
   return {
     labels: ['Oldies 👴', 'Iconic 👨', 'New Gen 👶'],
@@ -47,39 +53,18 @@ const chartOptions = {
 </script>
 
 <template>
-  <div class="chart-container">
-    <h3>Movie Distribution</h3>
-    <div class="chart-wrapper">
+  <div
+    class="bg-slate-800 border-2 border-yellow-600 rounded-lg p-2.5 fixed right-5 top-[100px] w-[200px] h-[250px] z-50 hidden lg:block"
+  >
+    <h3 class="text-yellow-600 text-center mb-2.5 font-sans font-bold text-sm">
+      Movie Distribution
+    </h3>
+    <div class="h-[200px] w-full">
       <Pie :data="chartData" :options="chartOptions" />
     </div>
   </div>
 </template>
 
 <style scoped>
-.chart-container {
-  background-color: #2a2f4c;
-  border: 2px solid #d4af37;
-  border-radius: 8px;
-  padding: 10px;
-  position: fixed;
-  right: 20px;
-  top: 100px;
-  width: 200px;
-  height: 250px;
-  z-index: 100;
-}
-
-.chart-wrapper {
-  height: 200px;
-  width: 100%;
-}
-
-h3 {
-  color: #d4af37;
-  text-align: center;
-  margin-bottom: 10px;
-  font-family: 'Open Sans', sans-serif;
-  font-weight: 700;
-  font-size: 0.9em;
-}
-</style> 
+/* Styles removed as they are replaced by Tailwind classes */
+</style>

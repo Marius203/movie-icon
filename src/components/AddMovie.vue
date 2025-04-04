@@ -91,45 +91,56 @@ const cancelAdd = () => {
 </script>
 
 <template>
-  <div class="form-container">
-    <h1>Add New Movie</h1>
+  <div class="max-w-xl mx-auto p-5 bg-white rounded-lg shadow-md border-2 border-red-800 mt-10">
+    <h1
+      class="font-sans font-bold text-center text-red-800 mb-8 text-2xl pb-2.5 border-b-2 border-red-800"
+    >
+      Add New Movie
+    </h1>
 
-    <form @submit.prevent="submitForm" class="movie-form">
-      <div class="form-group">
-        <label for="title">Title:</label>
+    <form @submit.prevent="submitForm" class="flex flex-col gap-4">
+      <div class="flex flex-col">
+        <label for="title" class="font-semibold mb-1.5 text-gray-700">Title:</label>
         <input
           type="text"
           id="title"
           v-model="newMovie.title"
-          :class="{ 'error-input': errors.title }"
+          class="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          :class="{ 'border-red-500 bg-red-50': errors.title }"
         />
-        <span class="error-message" v-if="errors.title">{{ errors.title }}</span>
+        <span class="text-red-500 text-sm mt-1.5" v-if="errors.title">{{ errors.title }}</span>
       </div>
 
-      <div class="form-group">
-        <label for="director">Director:</label>
+      <div class="flex flex-col">
+        <label for="director" class="font-semibold mb-1.5 text-gray-700">Director:</label>
         <input
           type="text"
           id="director"
           v-model="newMovie.director"
-          :class="{ 'error-input': errors.director }"
+          class="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          :class="{ 'border-red-500 bg-red-50': errors.director }"
         />
-        <span class="error-message" v-if="errors.director">{{ errors.director }}</span>
+        <span class="text-red-500 text-sm mt-1.5" v-if="errors.director">{{
+          errors.director
+        }}</span>
       </div>
 
-      <div class="form-group">
-        <label for="releaseDate">Release Date:</label>
+      <div class="flex flex-col">
+        <label for="releaseDate" class="font-semibold mb-1.5 text-gray-700">Release Date:</label>
         <input
           type="date"
           id="releaseDate"
           v-model="newMovie.releaseDate"
-          :class="{ 'error-input': errors.releaseDate }"
+          class="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          :class="{ 'border-red-500 bg-red-50': errors.releaseDate }"
         />
-        <span class="error-message" v-if="errors.releaseDate">{{ errors.releaseDate }}</span>
+        <span class="text-red-500 text-sm mt-1.5" v-if="errors.releaseDate">{{
+          errors.releaseDate
+        }}</span>
       </div>
 
-      <div class="form-group">
-        <label for="rating">Rating (0-10):</label>
+      <div class="flex flex-col">
+        <label for="rating" class="font-semibold mb-1.5 text-gray-700">Rating (0-10):</label>
         <input
           type="number"
           id="rating"
@@ -137,132 +148,57 @@ const cancelAdd = () => {
           step="0.1"
           min="0"
           max="10"
-          :class="{ 'error-input': errors.rating }"
+          class="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          :class="{ 'border-red-500 bg-red-50': errors.rating }"
         />
-        <span class="error-message" v-if="errors.rating">{{ errors.rating }}</span>
+        <span class="text-red-500 text-sm mt-1.5" v-if="errors.rating">{{ errors.rating }}</span>
       </div>
 
-      <div class="form-group">
-        <label for="description">Description:</label>
+      <div class="flex flex-col">
+        <label for="description" class="font-semibold mb-1.5 text-gray-700">Description:</label>
         <textarea
           id="description"
           v-model="newMovie.description"
           rows="4"
-          :class="{ 'error-input': errors.description }"
+          class="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          :class="{ 'border-red-500 bg-red-50': errors.description }"
         ></textarea>
-        <span class="error-message" v-if="errors.description">{{ errors.description }}</span>
+        <span class="text-red-500 text-sm mt-1.5" v-if="errors.description">{{
+          errors.description
+        }}</span>
       </div>
 
-      <div class="form-group">
-        <label for="poster">Poster URL:</label>
+      <div class="flex flex-col">
+        <label for="poster" class="font-semibold mb-1.5 text-gray-700">Poster URL:</label>
         <input
           type="text"
           id="poster"
           v-model="newMovie.poster"
-          :class="{ 'error-input': errors.poster }"
+          class="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+          :class="{ 'border-red-500 bg-red-50': errors.poster }"
         />
-        <span class="error-message" v-if="errors.poster">{{ errors.poster }}</span>
+        <span class="text-red-500 text-sm mt-1.5" v-if="errors.poster">{{ errors.poster }}</span>
       </div>
 
-      <div class="form-buttons">
-        <button type="button" class="cancel-btn" @click="cancelAdd">Cancel</button>
-        <button type="submit" class="submit-btn">Add Movie</button>
+      <div class="flex justify-between mt-5">
+        <button
+          type="button"
+          class="py-3 px-6 rounded-lg text-base font-bold border-none cursor-pointer transition duration-200 ease-in-out bg-gray-300 text-gray-800 hover:bg-gray-400"
+          @click="cancelAdd"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="py-3 px-6 rounded-lg text-base font-bold border-none cursor-pointer transition duration-200 ease-in-out bg-red-800 text-white hover:bg-red-900"
+        >
+          Add Movie
+        </button>
       </div>
     </form>
   </div>
 </template>
 
 <style scoped>
-.form-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 3px 6px rgba(139, 0, 0, 0.2);
-  border: 2px solid #8b0000;
-}
-
-h1 {
-  font-family: 'Open Sans', sans-serif;
-  font-weight: 700;
-  text-align: center;
-  color: #8b0000;
-  margin-bottom: 30px;
-  font-size: 2em;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #8b0000;
-}
-
-.movie-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-label {
-  font-weight: 600;
-  margin-bottom: 5px;
-  color: #555;
-}
-
-input,
-textarea {
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-.error-input {
-  border-color: #ff0000;
-  background-color: #fff0f0;
-}
-
-.error-message {
-  color: #ff0000;
-  font-size: 14px;
-  margin-top: 5px;
-}
-
-.form-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-.submit-btn,
-.cancel-btn {
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: bold;
-  border: none;
-  cursor: pointer;
-}
-
-.submit-btn {
-  background-color: #8b0000;
-  color: white;
-  transition: background-color 0.2s ease;
-}
-
-.submit-btn:hover {
-  background-color: #6b0000;
-}
-
-.cancel-btn {
-  background-color: #ccc;
-  color: #333;
-  transition: background-color 0.2s ease;
-}
-
-.cancel-btn:hover {
-  background-color: #999;
-}
+/* Styles removed as they are replaced by Tailwind classes */
 </style>
