@@ -239,14 +239,17 @@ const stealMovie = (movie) => {
             <span class="text-xl ml-1.5">{{
               moviesStore.getMovieClassification(movie.releaseDate)
             }}</span>
-            <!-- Add the 'Steal this' button -->
+          </h2>
+          <!-- Action buttons container -->
+          <div class="flex items-center gap-2">
+            <!-- Steal this button -->
             <button
               @click="stealMovie(movie)"
-              class="bg-green-600 text-white py-1 px-3 rounded text-xs font-semibold hover:bg-green-700 transition duration-200 ease-in-out ml-4"
+              class="text-green-400 hover:text-green-300 text-xs px-2 py-1 border border-green-400 rounded hover:bg-green-400 hover:text-white transition duration-150"
             >
               Steal this
             </button>
-          </h2>
+          </div>
         </div>
 
         <div class="pt-2 flex items-start">

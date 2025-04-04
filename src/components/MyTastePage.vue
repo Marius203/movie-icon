@@ -189,7 +189,7 @@ const paginationButtons = computed(() => {
 <template>
   <!-- Add a title specific to this page -->
   <h1
-    class="font-sans font-bold text-center text-yellow-600 mb-8 text-4xl pb-2.5 border-b-2 border-yellow-600 tracking-wide max-w-3xl mx-auto"
+    class="font-sans font-bold text-center text-blue-400 mb-8 text-4xl pb-2.5 border-b-2 border-blue-400 tracking-wide max-w-3xl mx-auto"
   >
     My Taste - Personal Movie List
   </h1>
@@ -217,9 +217,9 @@ const paginationButtons = computed(() => {
     <div class="max-w-3xl mx-auto mb-5 text-center">
       <button
         @click="sortByTitle()"
-        class="bg-yellow-600 text-slate-900 py-2 px-4 rounded font-semibold text-sm hover:bg-yellow-700 transition duration-200 ease-in-out mx-1"
+        class="bg-blue-400 text-slate-900 py-2 px-4 rounded font-semibold text-sm hover:bg-blue-500 transition duration-200 ease-in-out mx-1"
         :class="{
-          'bg-yellow-700 ring-2 ring-yellow-400':
+          'bg-blue-500 ring-2 ring-blue-300':
             userMoviesStore.sortOption === 'titleAsc' || userMoviesStore.sortOption === 'titleDesc',
         }"
       >
@@ -229,9 +229,9 @@ const paginationButtons = computed(() => {
       </button>
       <button
         @click="sortByRating()"
-        class="bg-yellow-600 text-slate-900 py-2 px-4 rounded font-semibold text-sm hover:bg-yellow-700 transition duration-200 ease-in-out mx-1"
+        class="bg-blue-400 text-slate-900 py-2 px-4 rounded font-semibold text-sm hover:bg-blue-500 transition duration-200 ease-in-out mx-1"
         :class="{
-          'bg-yellow-700 ring-2 ring-yellow-400':
+          'bg-blue-500 ring-2 ring-blue-300':
             userMoviesStore.sortOption === 'ratingAsc' ||
             userMoviesStore.sortOption === 'ratingDesc',
         }"
@@ -260,7 +260,7 @@ const paginationButtons = computed(() => {
         id="moviesPerPage"
         :value="userMoviesStore.moviesPerPage"
         @change="handleMoviesPerPageChange($event.target.value)"
-        class="bg-slate-700 border border-yellow-600 text-yellow-600 rounded py-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+        class="bg-slate-700 border border-blue-400 text-blue-400 rounded py-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
       >
         <option value="5">5</option>
         <option value="10">10</option>
@@ -274,21 +274,31 @@ const paginationButtons = computed(() => {
       <li
         v-for="(movie, index) in paginatedMovies"
         :key="movie.title + movie.director + index"
-        class="border-2 border-yellow-600 rounded-lg p-4 mb-5 shadow-md bg-slate-800 w-11/12 mx-auto"
+        class="border-2 border-blue-400 rounded-lg p-4 mb-5 shadow-md bg-slate-800 w-11/12 mx-auto"
       >
         <!-- Movie Title and Header Section -->
-        <div class="flex justify-between items-center mb-2 border-b border-yellow-600 pb-2">
-          <h2 class="font-sans font-extrabold m-0 text-yellow-600 tracking-tight text-2xl">
+        <div class="flex justify-between items-center mb-2 border-b border-blue-400 pb-2">
+          <h2 class="font-sans font-extrabold m-0 text-blue-400 tracking-tight text-2xl">
             {{ movie.title }}
           </h2>
-          <!-- Keep Edit Rating button positioning or adjust as needed -->
-          <button
-            v-if="editingRating !== index"
-            @click="startEditRating(index, movie.rating)"
-            class="text-yellow-500 hover:text-yellow-400 text-sm ml-4 flex-shrink-0"
-          >
-            Edit Rating
-          </button>
+          <!-- Action buttons container -->
+          <div class="flex items-center gap-2">
+            <!-- Edit Rating button -->
+            <button
+              v-if="editingRating !== index"
+              @click="startEditRating(index, movie.rating)"
+              class="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 border border-blue-400 rounded hover:bg-blue-400 hover:text-slate-900 transition duration-150"
+            >
+              Edit Rating
+            </button>
+            <!-- Remove button -->
+            <button
+              @click="removeMovie(index)"
+              class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400 rounded hover:bg-red-400 hover:text-white transition duration-150"
+            >
+              Remove
+            </button>
+          </div>
         </div>
 
         <!-- Movie Content with Poster -->
@@ -296,15 +306,15 @@ const paginationButtons = computed(() => {
           <img
             :src="movie.poster"
             :alt="movie.title"
-            class="max-w-[120px] h-auto mr-4 rounded shadow-md border border-yellow-600"
+            class="max-w-[120px] h-auto mr-4 rounded shadow-md border border-blue-400"
           />
           <div class="flex flex-col justify-around flex-1">
             <!-- Movie Details -->
             <p class="my-1.5 text-gray-200">
-              <strong class="text-yellow-600">Director:</strong> {{ movie.director }}
+              <strong class="text-blue-400">Director:</strong> {{ movie.director }}
             </p>
             <p class="my-1.5 text-gray-200">
-              <strong class="text-yellow-600">Release Year:</strong>
+              <strong class="text-blue-400">Release Year:</strong>
               {{ new Date(movie.releaseDate).getFullYear() }}
             </p>
             <p class="mt-2.5 italic leading-snug text-gray-400">
@@ -319,7 +329,7 @@ const paginationButtons = computed(() => {
                 min="0"
                 max="10"
                 step="0.1"
-                class="bg-gray-700 text-white rounded p-1 w-20 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                class="bg-gray-700 text-white rounded p-1 w-20 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
               <button
                 @click="updateRating(index)"
@@ -335,16 +345,8 @@ const paginationButtons = computed(() => {
               </button>
             </div>
             <div v-else class="flex items-center mt-3">
-              <span class="text-yellow-400 font-bold text-lg">★ {{ movie.rating }} / 10</span>
+              <span class="text-blue-400 font-bold text-lg">★ {{ movie.rating }} / 10</span>
             </div>
-
-            <!-- Remove Button -->
-            <button
-              @click="removeMovie(index)"
-              class="mt-4 bg-red-600 text-white py-2 px-4 rounded font-semibold text-sm hover:bg-red-700 transition duration-200 ease-in-out w-full"
-            >
-              Remove from My List
-            </button>
           </div>
         </div>
       </li>
@@ -369,7 +371,7 @@ const paginationButtons = computed(() => {
           :class="[
             'px-4 py-2 rounded transition duration-150',
             button === currentPage
-              ? 'bg-yellow-600 text-slate-900 font-bold' // Active state like MovieList
+              ? 'bg-blue-400 text-slate-900 font-bold' // Active state like MovieList
               : 'bg-slate-700 text-white hover:bg-slate-600', // Inactive state like MovieList
           ]"
         >
