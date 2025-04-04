@@ -7,7 +7,7 @@ const searchQuery = ref('')
 
 const goToMovies = () => {
   // Navigate to the movie list page (read-only)
-  router.push('/')
+  router.push('/movie-list')
 }
 
 const goToMyTaste = () => {

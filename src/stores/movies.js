@@ -64,14 +64,16 @@ export const useMoviesStore = defineStore('movies', () => {
       poster:
         'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_.jpg',
     },
-      {
-        title: "Pulp Fiction",
-        director: "Quentin Tarantino",
-        releaseDate: "1994-10-14",
-        rating: 8.9,
-        description: "The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.",
-        poster: "https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg"
-      }
+    {
+      title: 'Pulp Fiction',
+      director: 'Quentin Tarantino',
+      releaseDate: '1994-10-14',
+      rating: 8.9,
+      description:
+        'The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.',
+      poster:
+        'https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_.jpg',
+    },
   ])
 
   // Current sort option

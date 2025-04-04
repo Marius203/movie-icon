@@ -6,18 +6,27 @@ import { useMoviesStore } from '@/stores/movies'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
-const moviesStore = useMoviesStore()
+const props = defineProps({
+  movies: {
+    type: Array,
+    required: true,
+  },
+  getMovieClassification: {
+    type: Function,
+    required: true,
+  },
+})
 
 const chartData = computed(() => {
-  const movies = moviesStore.movies
+  const movies = props.movies
   const oldies = movies.filter(
-    (movie) => moviesStore.getMovieClassification(movie.releaseDate) === '👴',
+    (movie) => props.getMovieClassification(movie.releaseDate) === '👴',
   ).length
   const iconic = movies.filter(
-    (movie) => moviesStore.getMovieClassification(movie.releaseDate) === '👨',
+    (movie) => props.getMovieClassification(movie.releaseDate) === '👨',
   ).length
   const newGen = movies.filter(
-    (movie) => moviesStore.getMovieClassification(movie.releaseDate) === '👶',
+    (movie) => props.getMovieClassification(movie.releaseDate) === '👶',
   ).length
 
   return {

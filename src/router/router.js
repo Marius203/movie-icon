@@ -14,7 +14,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/login',
+      path: '/',
       name: 'login',
       component: LoginPage,
       meta: { requiresGuest: true },
@@ -32,7 +32,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/',
+      path: '/movie-list',
       name: 'movie-list',
       component: MovieList,
       meta: { requiresAuth: true },

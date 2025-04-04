@@ -2,9 +2,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useMoviesStore } from '@/stores/movies'
-import MovieClassificationChart from './MovieClassificationChart.vue'
+import { useUsersStore } from '@/stores/users'
+// import MovieClassificationChart from './MovieClassificationChart.vue'
 
 const moviesStore = useMoviesStore()
+const userMoviesStore = useUsersStore()
 
 // Pagination
 const currentPage = ref(1)
@@ -128,6 +130,27 @@ const paginationButtons = computed(() => {
 
   return buttons
 })
+
+// Method to add a movie to the store (simulates adding to personal list for now)
+const stealMovie = (movie) => {
+  // Check if the movie already exists in the user's list based on title, director, and release date
+  const exists = userMoviesStore.userMovies.some(
+    (m) =>
+      m.title === movie.title &&
+      m.director === movie.director &&
+      m.releaseDate === movie.releaseDate,
+  )
+
+  if (exists) {
+    alert(`${movie.title} is already in your personal list.`)
+    return
+  }
+
+  // Add a deep copy of the movie object to avoid reactivity issues
+  const movieCopy = JSON.parse(JSON.stringify(movie))
+  userMoviesStore.addMovie(movieCopy) // Add to the user store
+  alert(`${movie.title} 'stolen' and added to your personal list!`) // Confirmation message
+}
 </script>
 
 <!-- html -->
@@ -216,6 +239,13 @@ const paginationButtons = computed(() => {
             <span class="text-xl ml-1.5">{{
               moviesStore.getMovieClassification(movie.releaseDate)
             }}</span>
+            <!-- Add the 'Steal this' button -->
+            <button
+              @click="stealMovie(movie)"
+              class="bg-green-600 text-white py-1 px-3 rounded text-xs font-semibold hover:bg-green-700 transition duration-200 ease-in-out ml-4"
+            >
+              Steal this
+            </button>
           </h2>
         </div>
 
