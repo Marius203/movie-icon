@@ -10,7 +10,7 @@ app = FastAPI()
 def get_movies():
     return movies
 
-@app.get("/movies/{movie_id}", response_model=Movie)
+@app.get("/movies/byid/{movie_id}", response_model=Movie)
 def get_movie(movie_id):
     for m in movies:
         if m.movieIid == movie_id:
@@ -37,3 +37,27 @@ def delete_todo(movie_id: int):
             movies.pop(index)
             return
     raise HTTPException(status_code=404, detail="Movie not found (DELETE)")
+
+@app.get("/movies/bystr/{partial_title_or_director}", response_model=List[Movie])
+def get_movies_filtered(partial_title_or_director: str):
+    res = []
+    for m in movies:
+        if partial_title_or_director.lower() in m.title.lower() or partial_title_or_director.lower() in m.director.lower():
+            res.append(m)
+    return res
+
+@app.get("/movies/sorted/bytitleasc")
+def get_movies_sorted_by_title_asc():
+    return sorted(movies, key=lambda movie: movie.title)
+
+@app.get("/movies/sorted/bytitledesc", response_model=List[Movie])
+def get_movies_sorted_by_title_desc():
+    return sorted(movies, key=lambda movie: movie.title, reverse=True)
+
+@app.get("/movies/sorted/byratingasc")
+def get_movies_sorted_by_title_asc():
+    return sorted(movies, key=lambda movie: movie.rating)
+
+@app.get("/movies/sorted/byratingdesc", response_model=List[Movie])
+def get_movies_sorted_by_title_desc():
+    return sorted(movies, key=lambda movie: movie.rating, reverse=True)

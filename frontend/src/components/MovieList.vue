@@ -259,6 +259,40 @@ const handleStealMovie = (movie) => {
               moviesStore.getMovieClassification(movie.releaseDate)
             }}</span>
           </h2>
+
+          <button
+            @click.stop="handleStealMovie(movie)"
+            :disabled="
+              userMoviesStore.userMovies.some(
+                (m) =>
+                  m.title === movie.title &&
+                  m.director === movie.director &&
+                  m.releaseDate === movie.releaseDate,
+              )
+            "
+            class="px-2 py-1 text-sm rounded transition-colors"
+            :class="
+              userMoviesStore.userMovies.some(
+                (m) =>
+                  m.title === movie.title &&
+                  m.director === movie.director &&
+                  m.releaseDate === movie.releaseDate,
+              )
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : 'bg-green-600 text-white hover:bg-green-700'
+            "
+          >
+            {{
+              userMoviesStore.userMovies.some(
+                (m) =>
+                  m.title === movie.title &&
+                  m.director === movie.director &&
+                  m.releaseDate === movie.releaseDate,
+              )
+                ? 'Already Stolen'
+                : 'Steal this'
+            }}
+          </button>
         </div>
 
         <div class="pt-2 flex items-start">

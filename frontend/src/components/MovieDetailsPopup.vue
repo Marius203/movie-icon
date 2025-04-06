@@ -128,7 +128,7 @@ const handleSteal = () => {
               : 'bg-green-600 text-white hover:bg-green-700'
           "
         >
-          {{ isMovieInUserList ? 'Already in Your List' : 'Steal this' }}
+          {{ isMovieInUserList ? 'Already Stolen' : 'Steal this' }}
         </button>
       </div>
     </div>
