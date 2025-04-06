@@ -111,7 +111,7 @@ onUnmounted(() => {
     <!-- Content -->
     <div class="relative z-10 text-center">
       <h1 class="text-5xl font-extrabold mb-6 text-yellow-500 drop-shadow-lg">
-        Of course your taste is better! ��
+        Of course your taste is better! 😎
       </h1>
 
       <!-- Search container with suggestions -->
