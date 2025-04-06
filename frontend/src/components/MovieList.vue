@@ -16,6 +16,10 @@ const isPopupOpen = ref(false)
 // Pagination
 const currentPage = ref(1)
 
+onMounted(async () => {
+  await moviesStore.fetchMovies()
+})
+
 // Use the sortedMovies computed property from the store
 const movies = computed(() => moviesStore.sortedMovies)
 
@@ -58,24 +62,25 @@ const nextPage = () => {
   }
 }
 
-// Sorting functions
-const sortByTitle = () => {
+const sortByTitle = async () => {
   if (moviesStore.sortOption === 'titleAsc') {
     moviesStore.setSortOption('titleDesc')
+    await moviesStore.fetchMoviesWithSort('title', 'desc')
   } else {
     moviesStore.setSortOption('titleAsc')
+    await moviesStore.fetchMoviesWithSort('title', 'asc')
   }
-  // Reset to first page when sorting changes
   currentPage.value = 1
 }
 
-const sortByRating = () => {
+const sortByRating = async () => {
   if (moviesStore.sortOption === 'ratingAsc') {
     moviesStore.setSortOption('ratingDesc')
+    await moviesStore.fetchMoviesWithSort('rating', 'desc')
   } else {
     moviesStore.setSortOption('ratingAsc')
+    await moviesStore.fetchMoviesWithSort('rating', 'asc')
   }
-  // Reset to first page when sorting changes
   currentPage.value = 1
 }
 

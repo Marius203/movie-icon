@@ -1,6 +1,6 @@
 <!-- javascript -->
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMoviesStore } from '@/stores/movies'
 import { useAdminStore } from '@/stores/admin'
@@ -11,8 +11,12 @@ const adminStore = useAdminStore()
 
 // Check if admin is logged in
 if (!adminStore.isAdmin) {
-  router.push('/admin/login')
+  router.push('/login')
 }
+
+onMounted(() => {
+  moviesStore.fetchMovies()
+})
 
 // Movie being edited
 const editingMovie = ref(null)
@@ -27,6 +31,19 @@ const editedMovie = ref({
 
 // Form validation errors
 const errors = ref({})
+
+// Control showing the add movie form
+const showAddMovieForm = ref(false)
+
+// New movie object
+const newMovie = ref({
+  title: '',
+  director: '',
+  releaseDate: '',
+  rating: '',
+  description: '',
+  poster: '',
+})
 
 // Start editing a movie
 const startEdit = (movie) => {
@@ -94,22 +111,72 @@ const isValidUrl = (url) => {
 }
 
 // Save edited movie
-const saveEdit = () => {
+const saveEdit = async () => {
   if (validateMovie(editedMovie.value)) {
-    const index = moviesStore.movies.findIndex((m) => m === editingMovie.value)
-    if (index !== -1) {
-      moviesStore.movies[index] = { ...editedMovie.value }
+    try {
+      // Call the API to update the movie
+      await moviesStore.updateMovieAPI(editingMovie.value.id, editedMovie.value)
+
+      // Success notification
+      alert('Movie updated successfully!')
+
+      // Close edit mode
       cancelEdit()
+    } catch (error) {
+      console.error('Update error:', error)
+      alert('Failed to update movie. Please try again.')
     }
   }
 }
 
-// Delete movie
-const deleteMovie = (movie) => {
+const deleteMovie = async (movie) => {
+  console.log('Movie to delete:', movie) // Add this line
   if (confirm('Are you sure you want to delete this movie?')) {
-    const index = moviesStore.movies.findIndex((m) => m === movie)
-    if (index !== -1) {
-      moviesStore.movies.splice(index, 1)
+    try {
+      // Call the API to delete the movie
+      await moviesStore.deleteMovieAPI(movie.id)
+      // Success notification
+      alert('Movie deleted successfully!')
+    } catch (error) {
+      console.error('Delete error details:', error) // Add this for better debugging
+      alert('Failed to delete movie. Please try again.')
+    }
+  }
+}
+
+// Toggle add movie form
+const toggleAddMovieForm = () => {
+  showAddMovieForm.value = !showAddMovieForm.value
+  if (!showAddMovieForm.value) {
+    // Reset form when hiding
+    newMovie.value = {
+      title: '',
+      director: '',
+      releaseDate: '',
+      rating: '',
+      description: '',
+      poster: '',
+    }
+    errors.value = {}
+  }
+}
+
+// Add a new movie
+const addMovie = async () => {
+  if (validateMovie(newMovie.value)) {
+    try {
+      // Convert rating to number before saving
+      const movieToAdd = {
+        ...newMovie.value,
+        rating: parseFloat(newMovie.value.rating),
+      }
+      await moviesStore.addMovieAPI(movieToAdd)
+      // Clear form and hide it
+      toggleAddMovieForm()
+      // Show success notification
+      alert('Movie added successfully!')
+    } catch (error) {
+      alert('Failed to add movie. Please try again.')
     }
   }
 }
@@ -134,6 +201,112 @@ const handleLogout = () => {
         >
           Logout
         </button>
+      </div>
+
+      <!-- Add Movie Button -->
+      <div class="mb-6">
+        <button
+          @click="toggleAddMovieForm"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center"
+        >
+          <span class="mr-2">{{ showAddMovieForm ? 'Cancel' : 'Add New Movie' }}</span>
+          <span v-if="!showAddMovieForm">+</span>
+          <span v-else>×</span>
+        </button>
+      </div>
+
+      <!-- Add Movie Form -->
+      <div
+        v-if="showAddMovieForm"
+        class="bg-slate-800 rounded-lg shadow-lg p-6 border-2 border-green-600 mb-6"
+      >
+        <h2 class="text-xl font-semibold text-green-600 mb-4">Add New Movie</h2>
+
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300">Title</label>
+              <input
+                v-model="newMovie.title"
+                type="text"
+                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+                :class="{ 'border-red-500': errors.title }"
+              />
+              <p v-if="errors.title" class="text-red-500 text-sm mt-1">{{ errors.title }}</p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-300">Director</label>
+              <input
+                v-model="newMovie.director"
+                type="text"
+                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+                :class="{ 'border-red-500': errors.director }"
+              />
+              <p v-if="errors.director" class="text-red-500 text-sm mt-1">{{ errors.director }}</p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-300">Release Date</label>
+              <input
+                v-model="newMovie.releaseDate"
+                type="date"
+                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+                :class="{ 'border-red-500': errors.releaseDate }"
+              />
+              <p v-if="errors.releaseDate" class="text-red-500 text-sm mt-1">
+                {{ errors.releaseDate }}
+              </p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-300">Rating</label>
+              <input
+                v-model="newMovie.rating"
+                type="number"
+                step="0.1"
+                min="0"
+                max="10"
+                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+                :class="{ 'border-red-500': errors.rating }"
+              />
+              <p v-if="errors.rating" class="text-red-500 text-sm mt-1">{{ errors.rating }}</p>
+            </div>
+
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-300">Description</label>
+              <textarea
+                v-model="newMovie.description"
+                rows="3"
+                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+                :class="{ 'border-red-500': errors.description }"
+              ></textarea>
+              <p v-if="errors.description" class="text-red-500 text-sm mt-1">
+                {{ errors.description }}
+              </p>
+            </div>
+
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-300">Poster URL</label>
+              <input
+                v-model="newMovie.poster"
+                type="text"
+                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+                :class="{ 'border-red-500': errors.poster }"
+              />
+              <p v-if="errors.poster" class="text-red-500 text-sm mt-1">{{ errors.poster }}</p>
+            </div>
+          </div>
+
+          <div class="flex justify-end">
+            <button
+              @click="addMovie"
+              class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+            >
+              Add Movie
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Movie List -->
