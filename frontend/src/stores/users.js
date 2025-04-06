@@ -2,6 +2,10 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
 export const useUsersStore = defineStore('users', () => {
+  // User authentication state
+  const isLoggedIn = ref(false)
+  const currentUsername = ref('')
+
   // User-specific movie data - starts empty
   const userMovies = ref([])
 
@@ -10,6 +14,34 @@ export const useUsersStore = defineStore('users', () => {
 
   // Movies per page option for the user's list
   const moviesPerPage = ref(5)
+
+  // Login function
+  function login(username, password) {
+    // For demo purposes, accept any non-admin credentials
+    // In a real app, this would validate against a backend
+    if (username !== 'admin') {
+      isLoggedIn.value = true
+      currentUsername.value = username
+      localStorage.setItem('userLoggedIn', 'true')
+      return true
+    }
+    return false
+  }
+
+  // Logout function
+  function logout() {
+    isLoggedIn.value = false
+    currentUsername.value = ''
+    localStorage.removeItem('userLoggedIn')
+  }
+
+  // Check login status
+  function checkLoginStatus() {
+    const userLoggedIn = localStorage.getItem('userLoggedIn') === 'true'
+    if (userLoggedIn) {
+      isLoggedIn.value = true
+    }
+  }
 
   // Set movies per page for the user's list
   function setMoviesPerPage(value) {
@@ -99,7 +131,9 @@ export const useUsersStore = defineStore('users', () => {
   }
 
   return {
-    userMovies, // Renamed from 'users'
+    isLoggedIn,
+    currentUsername,
+    userMovies,
     sortedMovies,
     sortOption,
     setSortOption,
@@ -109,5 +143,8 @@ export const useUsersStore = defineStore('users', () => {
     getMovieClassification,
     moviesPerPage,
     setMoviesPerPage,
+    login,
+    logout,
+    checkLoginStatus,
   }
 })
