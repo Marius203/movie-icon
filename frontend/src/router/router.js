@@ -4,10 +4,17 @@ import AddMovie from '@/components/AddMovie.vue'
 import LoginPage from '@/components/LoginPage.vue'
 import HomePage from '@/components/HomePage.vue'
 import MyTastePage from '@/components/MyTastePage.vue'
+import AdminDashboard from '@/components/AdminDashboard.vue'
+import { useAdminStore } from '@/stores/admin'
 
-// Helper function to check login status (using localStorage for simplicity)
+// Helper function to check login status
 const isAuthenticated = () => {
   return localStorage.getItem('userLoggedIn') === 'true'
+}
+
+// Helper function to check admin status
+const isAdmin = () => {
+  return localStorage.getItem('adminLoggedIn') === 'true'
 }
 
 const router = createRouter({
@@ -15,14 +22,18 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'login',
-      component: LoginPage,
-      meta: { requiresGuest: true },
+      redirect: '/login',
     },
     {
       path: '/home',
       name: 'home',
       component: HomePage,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/movies',
+      name: 'movies',
+      component: MovieList,
       meta: { requiresAuth: true },
     },
     {
@@ -32,29 +43,32 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/movie-list',
-      name: 'movie-list',
-      component: MovieList,
-      meta: { requiresAuth: true },
+      path: '/login',
+      name: 'login',
+      component: LoginPage,
     },
     {
-      path: '/add-movie',
-      name: 'add-movie',
-      component: AddMovie,
-      meta: { requiresAuth: true },
+      path: '/admin/dashboard',
+      name: 'admin-dashboard',
+      component: AdminDashboard,
+      meta: { requiresAdmin: true },
     },
   ],
 })
 
-// Navigation Guards
+// Navigation guard for authentication
 router.beforeEach((to, from, next) => {
-  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
-  const requiresGuest = to.matched.some((record) => record.meta.requiresGuest)
+  // Allow access to login page
+  if (to.path === '/login') {
+    next()
+    return
+  }
 
-  if (requiresAuth && !isAuthenticated()) {
-    next({ name: 'login' })
-  } else if (requiresGuest && isAuthenticated()) {
-    next({ name: 'home' })
+  // Check authentication for protected routes
+  if (to.meta.requiresAuth && !isAuthenticated()) {
+    next('/login')
+  } else if (to.meta.requiresAdmin && !isAdmin()) {
+    next('/login')
   } else {
     next()
   }

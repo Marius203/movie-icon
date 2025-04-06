@@ -71,7 +71,7 @@ const handleStealMovie = (movie) => {
 
 // Navigation functions
 const goToMovies = () => {
-  router.push('/movie-list')
+  router.push('/movies')
 }
 
 const goToMyTaste = () => {
