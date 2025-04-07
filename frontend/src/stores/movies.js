@@ -6,24 +6,35 @@ export const useMoviesStore = defineStore('movies', () => {
   // Movie data
   var movies = ref([])
 
+  // Helper function for delay
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
   // Add this new action
-  async function fetchMovies() {
+  async function fetchMovies(limit = 20, offset = 0, delayMs = 500) {
     try {
-      // Basic fetch
-      const response = await axios.get('http://localhost:3000/movies')
+      // Include limit and offset as query parameters
+      const response = await axios.get(
+        `http://localhost:3000/movies?limit=${limit}&offset=${offset}`,
+      )
       movies.value = response.data
+      return response.data
     } catch (error) {
       console.error('Error fetching movies:', error)
+      return []
     }
   }
 
   // Add this for sorting through API
-  async function fetchMoviesWithSort(sortBy, order) {
+  async function fetchMoviesWithSort(sortBy, order, limit = 20, offset = 0) {
     try {
-      const response = await axios.get(`http://localhost:3000/movies?sort=${sortBy}&order=${order}`)
+      const response = await axios.get(
+        `http://localhost:3000/movies?sort=${sortBy}&order=${order}&limit=${limit}&offset=${offset}`,
+      )
       movies.value = response.data
+      return response.data
     } catch (error) {
       console.error('Error fetching sorted movies:', error)
+      return []
     }
   }
 
