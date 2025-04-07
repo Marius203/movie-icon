@@ -28,7 +28,7 @@ const writeData = (data) => {
   fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
 };
 
-// GET all movies with sorting and filtering
+// GET all movies with sorting, filtering, and pagination
 app.get("/movies", (req, res) => {
   const data = readData();
   let movies = [...data.movies]; // Create a copy to avoid modifying original data
@@ -68,7 +68,14 @@ app.get("/movies", (req, res) => {
     });
   }
 
-  res.json(movies);
+  // PAGINATION
+  const limit = parseInt(req.query.limit) || movies.length;
+  const offset = parseInt(req.query.offset) || 0;
+
+  // Apply pagination
+  const paginatedMovies = movies.slice(offset, offset + limit);
+
+  res.json(paginatedMovies);
 });
 
 // GET single movie
@@ -168,10 +175,19 @@ app.delete("/movies/:id", (req, res) => {
   res.status(204).send();
 });
 
-// Start server
+// Only start the server if this file is run directly
 if (require.main === module) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
+  });
+
+  // Handle graceful shutdown
+  process.on("SIGTERM", () => {
+    console.log("SIGTERM signal received: closing HTTP server");
+    server.close(() => {
+      console.log("HTTP server closed");
+      process.exit(0);
+    });
   });
 }
 

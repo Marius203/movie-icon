@@ -1,6 +1,6 @@
 <!-- javascript -->
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useMoviesStore } from '@/stores/movies'
 import { useUsersStore } from '@/stores/users'
 import MovieDetailsPopup from './MovieDetailsPopup.vue'
@@ -13,53 +13,81 @@ const userMoviesStore = useUsersStore()
 const selectedMovie = ref(null)
 const isPopupOpen = ref(false)
 
-// Pagination
-const currentPage = ref(1)
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
+// Endless scrolling variables
+const displayedMovies = ref([])
+const offset = ref(0)
+const limit = ref(20)
+const loading = ref(false)
+const noMoreMovies = ref(false)
+const scrollActionPending = ref(false)
+
+// Load initial movies
 onMounted(async () => {
-  await moviesStore.fetchMovies()
+  loading.value = true
+  await moviesStore.fetchMovies(limit.value, offset.value)
+  displayedMovies.value = [...moviesStore.sortedMovies]
+  loading.value = false
+
+  // Add scroll event listener
+  window.addEventListener('scroll', handleScroll)
 })
 
-// Use the sortedMovies computed property from the store
-const movies = computed(() => moviesStore.sortedMovies)
-
-// Calculate paginated movies
-const paginatedMovies = computed(() => {
-  const startIndex = (currentPage.value - 1) * moviesStore.moviesPerPage
-  const endIndex = startIndex + moviesStore.moviesPerPage
-  return movies.value.slice(startIndex, endIndex)
+onUnmounted(() => {
+  // Remove scroll event listener on component unmount
+  window.removeEventListener('scroll', handleScroll)
 })
 
-// Calculate total pages
-const totalPages = computed(() => {
-  return Math.ceil(movies.value.length / moviesStore.moviesPerPage)
-})
+// Function to detect scroll position
+const handleScroll = async () => {
+  const bottomOfWindow =
+    document.documentElement.scrollTop + window.innerHeight >=
+    document.documentElement.offsetHeight - 200
 
-// Handle movies per page change
-const handleMoviesPerPageChange = (value) => {
-  moviesStore.setMoviesPerPage(parseInt(value))
-  currentPage.value = 1 // Reset to first page when changing items per page
-}
+  if (bottomOfWindow && !loading.value && !noMoreMovies.value && !scrollActionPending.value) {
+    scrollActionPending.value = true
+    await delay(500)
 
-// Navigate to a specific page
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
+    if (!loading.value && !noMoreMovies.value) {
+      loadMoreMovies()
+    }
+
+    scrollActionPending.value = false
   }
 }
 
-// Previous page
-const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
+const loadMoreMovies = async () => {
+  if (loading.value || noMoreMovies.value) return
+
+  loading.value = true
+  offset.value += limit.value
+
+  await moviesStore.fetchMovies(limit.value, offset.value)
+
+  // If no more movies were returned, mark as finished
+  if (moviesStore.sortedMovies.length === 0) {
+    noMoreMovies.value = true
+    loading.value = false
+    return
   }
+
+  // Add the new movies
+  displayedMovies.value = [...displayedMovies.value, ...moviesStore.sortedMovies]
+
+  loading.value = false
 }
 
-// Next page
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-  }
+// Handle sorting with endless scrolling
+const resetMovieList = async () => {
+  offset.value = 0
+  noMoreMovies.value = false
+  loading.value = true
+
+  await moviesStore.fetchMovies(limit.value, offset.value)
+  displayedMovies.value = [...moviesStore.sortedMovies]
+
+  loading.value = false
 }
 
 const sortByTitle = async () => {
@@ -70,7 +98,8 @@ const sortByTitle = async () => {
     moviesStore.setSortOption('titleAsc')
     await moviesStore.fetchMoviesWithSort('title', 'asc')
   }
-  currentPage.value = 1
+
+  await resetMovieList()
 }
 
 const sortByRating = async () => {
@@ -81,65 +110,14 @@ const sortByRating = async () => {
     moviesStore.setSortOption('ratingAsc')
     await moviesStore.fetchMoviesWithSort('rating', 'asc')
   }
-  currentPage.value = 1
+
+  await resetMovieList()
 }
 
-const resetSort = () => {
+const resetSort = async () => {
   moviesStore.setSortOption('default')
-  // Reset to first page when sorting changes
-  currentPage.value = 1
+  await resetMovieList()
 }
-
-// Add this computed property for pagination buttons
-const paginationButtons = computed(() => {
-  const buttons = []
-  const maxVisiblePages = 5
-
-  if (totalPages.value <= maxVisiblePages) {
-    // If total pages is less than or equal to max visible pages, show all
-    for (let i = 1; i <= totalPages.value; i++) {
-      buttons.push(i)
-    }
-  } else {
-    // Always show first page
-    buttons.push(1)
-
-    // Calculate start and end of visible range
-    let start = Math.max(2, currentPage.value - 1)
-    let end = Math.min(totalPages.value - 1, currentPage.value + 1)
-
-    // Adjust if we're near the start
-    if (currentPage.value <= 3) {
-      start = 2
-      end = 4
-    }
-    // Adjust if we're near the end
-    else if (currentPage.value >= totalPages.value - 2) {
-      start = totalPages.value - 3
-      end = totalPages.value - 1
-    }
-
-    // Add ellipsis after first page if needed
-    if (start > 2) {
-      buttons.push('...')
-    }
-
-    // Add middle pages
-    for (let i = start; i <= end; i++) {
-      buttons.push(i)
-    }
-
-    // Add ellipsis before last page if needed
-    if (end < totalPages.value - 1) {
-      buttons.push('...')
-    }
-
-    // Always show last page
-    buttons.push(totalPages.value)
-  }
-
-  return buttons
-})
 
 // Handle movie click
 const handleMovieClick = (movie) => {
@@ -178,7 +156,7 @@ const handleStealMovie = (movie) => {
 
 <!-- html -->
 <template>
-  <!-- Add a title specific to this page -->
+  <!-- Title -->
   <h1
     class="font-sans font-bold text-center text-yellow-600 mb-8 text-4xl pb-2.5 border-b-2 border-yellow-600 tracking-wide max-w-3xl mx-auto"
   >
@@ -228,30 +206,14 @@ const handleStealMovie = (movie) => {
 
     <!-- Movie Count -->
     <div class="max-w-3xl mx-auto text-center text-gray-400 mb-4">
-      Total Movies: {{ movies.length }}
-    </div>
-
-    <!-- Movies per page selector -->
-    <div class="max-w-3xl mx-auto flex items-center justify-center gap-2.5 mb-5">
-      <label for="moviesPerPage" class="text-gray-300 font-semibold">Movies per page:</label>
-      <select
-        id="moviesPerPage"
-        :value="moviesStore.moviesPerPage"
-        @change="handleMoviesPerPageChange($event.target.value)"
-        class="bg-slate-700 border border-yellow-600 text-yellow-600 rounded py-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
-      >
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="15">15</option>
-        <option value="20">20</option>
-      </select>
+      Showing {{ displayedMovies.length }} movies
     </div>
 
     <!-- Movie list -->
     <ul class="list-none p-0 max-w-3xl mx-auto">
       <li
-        v-for="(movie, index) in paginatedMovies"
-        :key="movie.id"
+        v-for="(movie, index) in displayedMovies"
+        :key="`${movie.id}-${index}`"
         class="border-2 border-yellow-600 rounded-lg p-4 mb-5 shadow-md bg-slate-800 w-11/12 mx-auto cursor-pointer hover:border-yellow-500 transition-colors"
         @click="handleMovieClick(movie)"
       >
@@ -326,42 +288,25 @@ const handleStealMovie = (movie) => {
       </li>
     </ul>
 
-    <!-- Pagination controls -->
-    <div
-      class="max-w-3xl mx-auto flex justify-center items-center gap-2 mt-5 mb-5"
-      v-if="totalPages > 1"
-    >
-      <button
-        @click="prevPage"
-        :disabled="currentPage === 1"
-        class="bg-slate-700 text-yellow-600 py-2 px-4 rounded border border-transparent hover:bg-slate-600 hover:border-yellow-600 transition duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Previous
-      </button>
+    <!-- Scroll action pending indicator -->
+    <div v-if="scrollActionPending && !loading" class="text-center py-4">
+      <div
+        class="inline-block h-6 w-6 animate-spin rounded-full border-3 border-solid border-amber-500 border-r-transparent"
+      ></div>
+      <p class="mt-2 text-amber-500">Preparing to load more...</p>
+    </div>
 
-      <template v-for="(page, index) in paginationButtons" :key="index">
-        <button
-          v-if="page !== '...'"
-          @click="goToPage(page)"
-          :class="[
-            'py-2 px-4 rounded border transition duration-200 ease-in-out',
-            currentPage === page
-              ? 'bg-yellow-600 text-slate-900 border-yellow-600 cursor-default'
-              : 'bg-slate-700 text-yellow-600 border-transparent hover:bg-slate-600 hover:border-yellow-600',
-          ]"
-        >
-          {{ page }}
-        </button>
-        <span v-else class="text-gray-500 px-2">...</span>
-      </template>
+    <!-- Loading indicator -->
+    <div v-if="loading" class="text-center py-4">
+      <div
+        class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-yellow-600 border-r-transparent"
+      ></div>
+      <p class="mt-2 text-yellow-600">Loading more movies...</p>
+    </div>
 
-      <button
-        @click="nextPage"
-        :disabled="currentPage === totalPages"
-        class="bg-slate-700 text-yellow-600 py-2 px-4 rounded border border-transparent hover:bg-slate-600 hover:border-yellow-600 transition duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Next
-      </button>
+    <!-- End of list message -->
+    <div v-if="noMoreMovies && displayedMovies.length > 0" class="text-center py-4 text-gray-400">
+      End of movie list
     </div>
   </div>
 

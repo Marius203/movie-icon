@@ -5,4 +5,7 @@ module.exports = {
   coverageDirectory: "coverage",
   coverageReporters: ["text", "lcov"],
   verbose: true,
+  testTimeout: 5000,
+  forceExit: true,
+  detectOpenHandles: true,
 };
