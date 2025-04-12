@@ -252,6 +252,27 @@ const handleLogout = () => {
   adminStore.logout()
   router.push('/login')
 }
+
+// Add this function to the script section, after the handleLogout function
+
+// Toggle add movie form visibility
+const toggleAddMovieForm = () => {
+  // Toggle the form visibility
+  showAddMovieForm.value = !showAddMovieForm.value
+
+  // Reset form if closing
+  if (!showAddMovieForm.value) {
+    newMovie.value = {
+      title: '',
+      director: '',
+      releaseDate: '',
+      rating: '',
+      description: '',
+      poster: '',
+    }
+    errors.value = {}
+  }
+}
 </script>
 
 <!-- html -->
