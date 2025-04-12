@@ -1,22 +1,81 @@
 <!-- javascript -->
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMoviesStore } from '@/stores/movies'
 import { useAdminStore } from '@/stores/admin'
+import { useConnectionStore } from '@/stores/connection' // Add this import
+import { localStorageService } from '@/services/localStorageService' // Add this import
 
 const router = useRouter()
 const moviesStore = useMoviesStore()
 const adminStore = useAdminStore()
+const connectionStore = useConnectionStore() // Add this line
+
+// Track pending operations count
+const pendingOperationsCount = ref(0)
 
 // Check if admin is logged in
 if (!adminStore.isAdmin) {
   router.push('/login')
 }
 
-onMounted(() => {
+onMounted(async () => {
   moviesStore.fetchMovies()
+  // Load pending operations count
+  refreshPendingOperationsCount()
 })
+
+// Function to refresh pending operations count
+async function refreshPendingOperationsCount() {
+  const pendingOps = await localStorageService.getPendingOperations()
+  pendingOperationsCount.value = pendingOps.length
+}
+
+// Watch connection status to attempt sync when back online
+watch(
+  () => [connectionStore.isOnline, connectionStore.isServerAvailable],
+  async ([newIsOnline, newIsServerAvailable]) => {
+    if (newIsOnline && newIsServerAvailable) {
+      if (pendingOperationsCount.value > 0) {
+        await syncPendingChanges()
+      }
+    }
+  },
+)
+
+// Function to manually sync pending changes
+async function syncPendingChanges() {
+  try {
+    await moviesStore.syncWithServer()
+    await moviesStore.fetchMovies() // Refresh data
+    await refreshPendingOperationsCount()
+    if (pendingOperationsCount.value === 0) {
+      alert('All pending changes synchronized successfully!')
+    } else {
+      alert('Some changes could not be synchronized. Please try again later.')
+    }
+  } catch (error) {
+    console.error('Sync error:', error)
+    alert('Error synchronizing changes. Please try again.')
+  }
+}
+
+// Add this function to the script section
+async function clearPendingChanges() {
+  if (
+    confirm('Are you sure you want to clear all pending changes? This action cannot be undone.')
+  ) {
+    try {
+      await localStorageService.clearPendingOperations()
+      await refreshPendingOperationsCount()
+      alert('All pending changes have been cleared.')
+    } catch (error) {
+      console.error('Error clearing pending changes:', error)
+      alert('Error clearing pending changes.')
+    }
+  }
+}
 
 // Movie being edited
 const editingMovie = ref(null)
@@ -117,8 +176,15 @@ const saveEdit = async () => {
       // Call the API to update the movie
       await moviesStore.updateMovieAPI(editingMovie.value.id, editedMovie.value)
 
-      // Success notification
-      alert('Movie updated successfully!')
+      // Update pending operations count
+      await refreshPendingOperationsCount()
+
+      // Different message based on connection status
+      if (connectionStore.isOnline && connectionStore.isServerAvailable) {
+        alert('Movie updated successfully!')
+      } else {
+        alert('Movie updated locally. Changes will sync when connection is restored.')
+      }
 
       // Close edit mode
       cancelEdit()
@@ -129,35 +195,26 @@ const saveEdit = async () => {
   }
 }
 
+// Delete a movie
 const deleteMovie = async (movie) => {
-  console.log('Movie to delete:', movie) // Add this line
   if (confirm('Are you sure you want to delete this movie?')) {
     try {
       // Call the API to delete the movie
       await moviesStore.deleteMovieAPI(movie.id)
-      // Success notification
-      alert('Movie deleted successfully!')
+
+      // Update pending operations count
+      await refreshPendingOperationsCount()
+
+      // Different message based on connection status
+      if (connectionStore.isOnline && connectionStore.isServerAvailable) {
+        alert('Movie deleted successfully!')
+      } else {
+        alert('Movie deleted locally. Changes will sync when connection is restored.')
+      }
     } catch (error) {
-      console.error('Delete error details:', error) // Add this for better debugging
+      console.error('Delete error details:', error)
       alert('Failed to delete movie. Please try again.')
     }
-  }
-}
-
-// Toggle add movie form
-const toggleAddMovieForm = () => {
-  showAddMovieForm.value = !showAddMovieForm.value
-  if (!showAddMovieForm.value) {
-    // Reset form when hiding
-    newMovie.value = {
-      title: '',
-      director: '',
-      releaseDate: '',
-      rating: '',
-      description: '',
-      poster: '',
-    }
-    errors.value = {}
   }
 }
 
@@ -171,10 +228,19 @@ const addMovie = async () => {
         rating: parseFloat(newMovie.value.rating),
       }
       await moviesStore.addMovieAPI(movieToAdd)
+
+      // Update pending operations count
+      await refreshPendingOperationsCount()
+
+      // Different message based on connection status
+      if (connectionStore.isOnline && connectionStore.isServerAvailable) {
+        alert('Movie added successfully!')
+      } else {
+        alert('Movie added locally. Changes will sync when connection is restored.')
+      }
+
       // Clear form and hide it
       toggleAddMovieForm()
-      // Show success notification
-      alert('Movie added successfully!')
     } catch (error) {
       alert('Failed to add movie. Please try again.')
     }
@@ -195,12 +261,42 @@ const handleLogout = () => {
       <!-- Header -->
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-red-600">Admin Dashboard</h1>
-        <button
-          @click="handleLogout"
-          class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-        >
-          Logout
-        </button>
+        <div class="flex items-center gap-4">
+          <!-- Add this new sync button with pending operations count -->
+          <button
+            v-if="pendingOperationsCount > 0"
+            @click="syncPendingChanges"
+            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center"
+            :disabled="!connectionStore.isOnline || !connectionStore.isServerAvailable"
+          >
+            <span class="mr-2">Sync Changes</span>
+            <span class="bg-white text-blue-600 rounded-full px-2 py-0.5 text-sm font-bold">
+              {{ pendingOperationsCount }}
+            </span>
+          </button>
+          <button
+            v-if="pendingOperationsCount > 0"
+            @click="clearPendingChanges"
+            class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors ml-2"
+          >
+            Clear Changes
+          </button>
+          <button
+            @click="handleLogout"
+            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <!-- Add connection status warning when offline -->
+      <div
+        v-if="!connectionStore.isOnline || !connectionStore.isServerAvailable"
+        class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700"
+      >
+        <p class="font-bold">Working in offline mode</p>
+        <p>Changes will be saved locally and synchronized when connection is restored.</p>
       </div>
 
       <!-- Add Movie Button -->

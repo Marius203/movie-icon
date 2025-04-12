@@ -1,65 +1,137 @@
-import { openDB } from 'idb'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 
-const DB_NAME = 'movieAppDB'
-const DB_VERSION = 1
-const STORE_NAMES = {
-  MOVIES: 'movies',
-  PENDING_OPERATIONS: 'pendingOperations',
+// In-memory cache
+let moviesCache = []
+let pendingOperations = []
+
+// Storage keys
+const STORAGE_KEYS = {
+  MOVIES: 'movie-icon-movies',
+  PENDING_OPERATIONS: 'movie-icon-pending-operations',
 }
 
-const dbPromise = openDB(DB_NAME, DB_VERSION, {
-  upgrade(db) {
-    db.createObjectStore(STORE_NAMES.MOVIES, { keyPath: 'id' })
-    db.createObjectStore(STORE_NAMES.PENDING_OPERATIONS, { autoIncrement: true })
-  },
-})
+// Load data from localStorage
+const loadCache = () => {
+  try {
+    // Load movies
+    const storedMovies = localStorage.getItem(STORAGE_KEYS.MOVIES)
+    if (storedMovies) {
+      moviesCache = JSON.parse(storedMovies)
+    }
+
+    // Load pending operations
+    const storedOperations = localStorage.getItem(STORAGE_KEYS.PENDING_OPERATIONS)
+    if (storedOperations) {
+      pendingOperations = JSON.parse(storedOperations)
+    }
+  } catch (error) {
+    console.error('Error loading from localStorage:', error)
+  }
+}
+
+// Save data to localStorage
+const saveCache = () => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.MOVIES, JSON.stringify(moviesCache))
+    localStorage.setItem(STORAGE_KEYS.PENDING_OPERATIONS, JSON.stringify(pendingOperations))
+  } catch (error) {
+    console.error('Error saving to localStorage:', error)
+  }
+}
+
+// Initialize cache when service loads
+loadCache()
 
 export const localStorageService = {
   async getAllMovies() {
-    return (await dbPromise).getAll(STORE_NAMES.MOVIES)
+    return moviesCache
   },
 
   async getMovie(id) {
-    return (await dbPromise).get(STORE_NAMES.MOVIES, id)
+    return moviesCache.find((movie) => movie.id === id) || null
   },
 
   async addMovie(movie) {
-    return (await dbPromise).add(STORE_NAMES.MOVIES, movie)
+    // Check if movie already exists (avoid duplicates)
+    const existingIndex = moviesCache.findIndex((m) => m.id === movie.id)
+    if (existingIndex !== -1) {
+      moviesCache[existingIndex] = movie
+    } else {
+      moviesCache.push(movie)
+    }
+    saveCache()
+    return movie
   },
 
   async updateMovie(movie) {
-    return (await dbPromise).put(STORE_NAMES.MOVIES, movie)
+    const index = moviesCache.findIndex((m) => m.id === movie.id)
+    if (index !== -1) {
+      moviesCache[index] = movie
+      saveCache()
+      return movie
+    }
+    return null
   },
 
   async deleteMovie(id) {
-    return (await dbPromise).delete(STORE_NAMES.MOVIES, id)
+    const index = moviesCache.findIndex((movie) => movie.id === id)
+    if (index !== -1) {
+      const deletedMovie = moviesCache[index]
+      moviesCache.splice(index, 1)
+      saveCache()
+      return deletedMovie
+    }
+    return null
   },
 
   async queueOperation(operation) {
     const pendingOp = {
+      id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
       type: operation.type, // 'CREATE', 'UPDATE', 'DELETE'
       data: operation.data,
       timestamp: new Date().toISOString(),
       status: 'pending',
     }
-    return (await dbPromise).add(STORE_NAMES.PENDING_OPERATIONS, pendingOp)
+
+    pendingOperations.push(pendingOp)
+    saveCache()
+
+    return pendingOp
   },
 
   async getPendingOperations() {
-    return (await dbPromise).getAll(STORE_NAMES.PENDING_OPERATIONS)
+    return pendingOperations
   },
 
   async clearPendingOperations() {
-    return (await dbPromise).clear(STORE_NAMES.PENDING_OPERATIONS)
+    pendingOperations = []
+    saveCache()
+    return true
+  },
+
+  async getPendingOperationsByType() {
+    const result = {
+      CREATE: 0,
+      UPDATE: 0,
+      DELETE: 0,
+      total: pendingOperations.length,
+    }
+
+    pendingOperations.forEach((op) => {
+      if (op.type in result) {
+        result[op.type]++
+      }
+    })
+
+    return result
   },
 
   async syncPendingOperations() {
-    const db = await dbPromise
-    const pendingOps = await db.getAll(STORE_NAMES.PENDING_OPERATIONS)
+    const operationsToProcess = [...pendingOperations]
+    const remainingOps = []
 
-    for (const op of pendingOps) {
+    for (const op of operationsToProcess) {
       try {
         switch (op.type) {
           case 'CREATE':
@@ -72,11 +144,16 @@ export const localStorageService = {
             await axios.delete(`${API_BASE_URL}/movies/${op.data.id}`)
             break
         }
-        // Remove successful operation
-        await db.delete(STORE_NAMES.PENDING_OPERATIONS, op.id)
       } catch (error) {
         console.error('Failed to sync operation:', error)
+        remainingOps.push(op) // Keep failed operations
       }
     }
+
+    // Update the pending operations with only those that failed
+    pendingOperations = remainingOps
+    saveCache()
+
+    return pendingOperations.length === 0 // true if all synced
   },
 }

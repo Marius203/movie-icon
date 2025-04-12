@@ -26,12 +26,32 @@
 
 <script setup>
 import { useConnectionStore } from '@/stores/connection'
+import { useAdminStore } from '@/stores/admin'
 import { storeToRefs } from 'pinia'
+import { ref, onMounted, watch } from 'vue'
+import { localStorageService } from '@/services/localStorageService'
 
 const connectionStore = useConnectionStore()
+const adminStore = useAdminStore()
 const { isOnline, isServerAvailable } = storeToRefs(connectionStore)
-</script>
 
-<style scoped>
-/* No scoped styles needed as we're using Tailwind */
-</style>
+const pendingChanges = ref(0)
+
+// Function to refresh pending operations count
+async function refreshPendingCount() {
+  const pendingOps = await localStorageService.getPendingOperations()
+  pendingChanges.value = pendingOps.length
+}
+
+onMounted(async () => {
+  await refreshPendingCount()
+  // Set up interval to refresh pending operations count every 10 seconds
+  const interval = setInterval(refreshPendingCount, 10000)
+  return () => clearInterval(interval)
+})
+
+// Update pending count when connection status changes
+watch([isOnline, isServerAvailable], async () => {
+  await refreshPendingCount()
+})
+</script>
