@@ -175,10 +175,18 @@ app.delete("/movies/:id", (req, res) => {
   res.status(204).send();
 });
 
+// Add health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // Only start the server if this file is run directly
 if (require.main === module) {
-  const server = app.listen(PORT, () => {
+  const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(
+      `Server is accessible on your local network at: http://${getLocalIP()}:${PORT}`
+    );
   });
 
   // Handle graceful shutdown
@@ -189,6 +197,19 @@ if (require.main === module) {
       process.exit(0);
     });
   });
+}
+
+// Helper function to get local IP address
+function getLocalIP() {
+  const interfaces = require("os").networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === "IPv4" && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return "localhost";
 }
 
 // Export the app for testing
