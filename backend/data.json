@@ -2,7 +2,7 @@
   "movies": [
     {
       "id": 18,
-      "title": "The Pooptrix",
+      "title": "The Matrix",
       "director": "Lana Wachowski, Lilly Wachowski",
       "releaseDate": "1999-03-31",
       "rating": 8.7,
@@ -296,15 +296,6 @@
       "rating": 8.5,
       "description": "A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family and sent him into slavery.",
       "poster": "https://image.tmdb.org/t/p/original/ehGpN04mLJIrSnxcZBMvHeG0eDc.jpg"
-    },
-    {
-      "id": 51,
-      "title": "pipi",
-      "director": "mr poop",
-      "releaseDate": "1000-10-10",
-      "rating": 10,
-      "description": "poop man poops everywhere ewwww",
-      "poster": "https://image.tmdb.org/t/p/original/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
     }
   ]
 }

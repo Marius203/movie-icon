@@ -1,6 +1,6 @@
 <!-- javascript -->
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMoviesStore } from '@/stores/movies'
 import { useAdminStore } from '@/stores/admin'
@@ -20,11 +20,73 @@ if (!adminStore.isAdmin) {
   router.push('/login')
 }
 
+// Add these variables after the existing refs
+// Endless scrolling variables
+const displayedMovies = ref([])
+const offset = ref(0)
+const limit = ref(20)
+const loading = ref(false)
+const noMoreMovies = ref(false)
+const scrollActionPending = ref(false)
+
+// Update the onMounted function to use pagination
 onMounted(async () => {
-  moviesStore.fetchMovies()
-  // Load pending operations count
+  loading.value = true
+  await moviesStore.fetchMovies(limit.value, offset.value)
+  displayedMovies.value = [...moviesStore.movies]
+  loading.value = false
   refreshPendingOperationsCount()
+
+  // Add scroll event listener
+  window.addEventListener('scroll', handleScroll)
 })
+
+// Add onUnmounted to clean up the event listener
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
+
+// Function to detect scroll position
+const handleScroll = async () => {
+  const bottomOfWindow =
+    document.documentElement.scrollTop + window.innerHeight >=
+    document.documentElement.offsetHeight - 200
+
+  if (bottomOfWindow && !loading.value && !noMoreMovies.value && !scrollActionPending.value) {
+    scrollActionPending.value = true
+    await delay(500) // Need to add the delay function
+
+    if (!loading.value && !noMoreMovies.value) {
+      loadMoreMovies()
+    }
+
+    scrollActionPending.value = false
+  }
+}
+
+// Add delay helper function
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// Function to load more movies
+const loadMoreMovies = async () => {
+  if (loading.value || noMoreMovies.value) return
+
+  loading.value = true
+  offset.value += limit.value
+
+  await moviesStore.fetchMovies(limit.value, offset.value)
+
+  // If no more movies were returned, mark as finished
+  if (moviesStore.movies.length === 0) {
+    noMoreMovies.value = true
+    loading.value = false
+    return
+  }
+
+  // Add new movies to displayed movies
+  displayedMovies.value = [...displayedMovies.value, ...moviesStore.movies]
+  loading.value = false
+}
 
 // Function to refresh pending operations count
 async function refreshPendingOperationsCount() {
@@ -48,7 +110,7 @@ watch(
 async function syncPendingChanges() {
   try {
     await moviesStore.syncWithServer()
-    await moviesStore.fetchMovies() // Refresh data
+    await refreshList() // Use the new refresh function
     await refreshPendingOperationsCount()
     if (pendingOperationsCount.value === 0) {
       alert('All pending changes synchronized successfully!')
@@ -75,6 +137,16 @@ async function clearPendingChanges() {
       alert('Error clearing pending changes.')
     }
   }
+}
+
+// Update the refresh function to reset pagination
+async function refreshList() {
+  offset.value = 0
+  loading.value = true
+  noMoreMovies.value = false
+  await moviesStore.fetchMovies(limit.value, 0)
+  displayedMovies.value = [...moviesStore.movies]
+  loading.value = false
 }
 
 // Movie being edited
@@ -188,6 +260,9 @@ const saveEdit = async () => {
 
       // Close edit mode
       cancelEdit()
+
+      // Add this line to refresh the movie list
+      await refreshList()
     } catch (error) {
       console.error('Update error:', error)
       alert('Failed to update movie. Please try again.')
@@ -211,6 +286,9 @@ const deleteMovie = async (movie) => {
       } else {
         alert('Movie deleted locally. Changes will sync when connection is restored.')
       }
+
+      // Add this line to refresh the movie list
+      await refreshList()
     } catch (error) {
       console.error('Delete error details:', error)
       alert('Failed to delete movie. Please try again.')
@@ -241,6 +319,9 @@ const addMovie = async () => {
 
       // Clear form and hide it
       toggleAddMovieForm()
+
+      // Add this line to refresh the movie list
+      await refreshList()
     } catch (error) {
       alert('Failed to add movie. Please try again.')
     }
@@ -431,11 +512,7 @@ const toggleAddMovieForm = () => {
         <h2 class="text-xl font-semibold text-red-600 mb-4">Manage Movies</h2>
 
         <div class="space-y-4">
-          <div
-            v-for="movie in moviesStore.movies"
-            :key="movie.title + movie.director"
-            class="bg-slate-700 p-4 rounded-lg"
-          >
+          <div v-for="movie in displayedMovies" :key="movie.id" class="bg-slate-700 p-4 rounded-lg">
             <!-- View Mode -->
             <div v-if="editingMovie !== movie" class="flex justify-between items-start">
               <div class="flex gap-4">
@@ -562,6 +639,22 @@ const toggleAddMovieForm = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div v-if="loading" class="text-center py-4">
+          <div
+            class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-red-600 border-r-transparent"
+          ></div>
+          <p class="mt-2 text-red-600">Loading more movies...</p>
+        </div>
+
+        <!-- End of list message -->
+        <div
+          v-if="noMoreMovies && displayedMovies.length > 0"
+          class="text-center py-4 text-gray-400"
+        >
+          End of movie list
         </div>
       </div>
     </div>
