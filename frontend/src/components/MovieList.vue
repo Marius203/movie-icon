@@ -4,7 +4,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useMoviesStore } from '@/stores/movies'
 import { useUsersStore } from '@/stores/users'
 import MovieDetailsPopup from './MovieDetailsPopup.vue'
-// import MovieClassificationChart from './MovieClassificationChart.vue'
+import MovieClassificationChart from './MovieClassificationChart.vue'
 
 const moviesStore = useMoviesStore()
 const userMoviesStore = useUsersStore()
@@ -164,7 +164,10 @@ const handleStealMovie = (movie) => {
   </h1>
 
   <!-- Movie Classification Chart -->
-  <MovieClassificationChart />
+  <MovieClassificationChart
+    :movies="displayedMovies"
+    :get-movie-classification="moviesStore.getMovieClassification"
+  />
 
   <!-- Main content wrapper -->
   <div class="max-w-3xl mx-auto">

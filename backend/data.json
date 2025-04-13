@@ -1,6 +1,177 @@
 {
   "movies": [
     {
+      "id": 1,
+      "title": "Seven Samurai",
+      "director": "Akira Kurosawa",
+      "releaseDate": "1954-04-26",
+      "rating": 8.6,
+      "description": "A poor village under attack by bandits recruits seven unemployed samurai to help them defend themselves in feudal Japan.",
+      "poster": "https://image.tmdb.org/t/p/original/8OKmBV5BUFzmozIC3pPWKHy17kx.jpg"
+    },
+    {
+      "id": 2,
+      "title": "Lawrence of Arabia",
+      "director": "David Lean",
+      "releaseDate": "1962-12-10",
+      "rating": 8.3,
+      "description": "The story of T.E. Lawrence, the English officer who successfully united and led the diverse, often warring, Arab tribes during World War I.",
+      "poster": "https://image.tmdb.org/t/p/original/5wJ2tVz5YRHXQgElJTwg1DhHXIU.jpg"
+    },
+    {
+      "id": 3,
+      "title": "Metropolis",
+      "director": "Fritz Lang",
+      "releaseDate": "1927-01-10",
+      "rating": 8.3,
+      "description": "In a futuristic city sharply divided between the working class and the city planners, the son of the city's mastermind falls in love with a working-class prophet.",
+      "poster": "https://image.tmdb.org/t/p/original/hUK9rewffKGqtXynH5SW3v9hzcu.jpg"
+    },
+    {
+      "id": 4,
+      "title": "Rashomon",
+      "director": "Akira Kurosawa",
+      "releaseDate": "1950-08-26",
+      "rating": 8.2,
+      "description": "The rape of a bride and the murder of her samurai husband are recalled from the perspectives of a bandit, the bride, the samurai's ghost and a woodcutter.",
+      "poster": "https://image.tmdb.org/t/p/original/gneKPofEHNFHSPOuLQaLeOQQvCL.jpg"
+    },
+    {
+      "id": 5,
+      "title": "The Seventh Seal",
+      "director": "Ingmar Bergman",
+      "releaseDate": "1957-02-16",
+      "rating": 8.1,
+      "description": "A knight returning to Sweden after the Crusades seeks answers about life, death, and the existence of God as he plays chess against the Grim Reaper during the Black Plague.",
+      "poster": "https://image.tmdb.org/t/p/original/wcZ21zrOsy0b52AfAF50XpTiv75.jpg"
+    },
+    {
+      "id": 6,
+      "title": "Citizen Kane",
+      "director": "Orson Welles",
+      "releaseDate": "1941-05-01",
+      "rating": 8.3,
+      "description": "Following the death of publishing tycoon Charles Foster Kane, reporters scramble to discover the meaning of his final utterance.",
+      "poster": "https://image.tmdb.org/t/p/original/sav0jxhqiH0bPr2vNFVlLf4neSv.jpg"
+    },
+    {
+      "id": 7,
+      "title": "Casablanca",
+      "director": "Michael Curtiz",
+      "releaseDate": "1942-11-26",
+      "rating": 8.5,
+      "description": "A cynical expatriate American cafe owner struggles to decide whether or not to help his former lover and her fugitive husband escape the Nazis in French Morocco.",
+      "poster": "https://image.tmdb.org/t/p/original/5K7cOHoay2mZusSLezBOY0Qxh8z.jpg"
+    },
+    {
+      "id": 8,
+      "title": "Gone with the Wind",
+      "director": "Victor Fleming",
+      "releaseDate": "1939-12-15",
+      "rating": 8.1,
+      "description": "A manipulative woman and a roguish man conduct a turbulent romance during the American Civil War and Reconstruction periods.",
+      "poster": "https://image.tmdb.org/t/p/original/lNz2Ow0wGcWizsCJYbKLqqgP3Uu.jpg"
+    },
+    {
+      "id": 9,
+      "title": "City of God",
+      "director": "Fernando Meirelles",
+      "releaseDate": "2002-05-18",
+      "rating": 8.6,
+      "description": "In the slums of Rio, two kids' paths diverge as one struggles to become a photographer and the other a kingpin.",
+      "poster": "https://image.tmdb.org/t/p/original/k7eYdWvhYQyRQoU2TB2A2Xu2TfD.jpg"
+    },
+    {
+      "id": 10,
+      "title": "Modern Times",
+      "director": "Charles Chaplin",
+      "releaseDate": "1936-02-05",
+      "rating": 8.5,
+      "description": "The Tramp struggles to live in modern industrial society with the help of a young homeless woman.",
+      "poster": "https://image.tmdb.org/t/p/original/7uoiKOEjxBBW0AgDGQWrlfGQ90w.jpg"
+    },
+    {
+      "id": 11,
+      "title": "Ran",
+      "director": "Akira Kurosawa",
+      "releaseDate": "1985-06-01",
+      "rating": 8.2,
+      "description": "In Medieval Japan, an elderly warlord retires, handing over his empire to his three sons. However, his decision to divide his land leads to tragedy.",
+      "poster": "https://image.tmdb.org/t/p/original/fR0xUXrolEcyTTMr61nYWpT7lHx.jpg"
+    },
+    {
+      "id": 12,
+      "title": "Barry Lyndon",
+      "director": "Stanley Kubrick",
+      "releaseDate": "1975-12-18",
+      "rating": 8.1,
+      "description": "An Irish rogue wins the heart of a rich widow and assumes her dead husband's aristocratic position in 18th-century England.",
+      "poster": "https://image.tmdb.org/t/p/original/iyTD4QcDemiDQkS8qnQAGrpjKw3.jpg"
+    },
+    {
+      "id": 13,
+      "title": "The Great Dictator",
+      "director": "Charles Chaplin",
+      "releaseDate": "1940-10-15",
+      "rating": 8.4,
+      "description": "Dictator Adenoid Hynkel tries to expand his empire while a poor Jewish barber tries to avoid persecution from Hynkel's regime.",
+      "poster": "https://image.tmdb.org/t/p/original/5yGcSED8DfzdUJwARQX6djXAaET.jpg"
+    },
+    {
+      "id": 14,
+      "title": "Sunset Boulevard",
+      "director": "Billy Wilder",
+      "releaseDate": "1950-08-10",
+      "rating": 8.4,
+      "description": "A screenwriter develops a dangerous relationship with a faded film star determined to make a triumphant return.",
+      "poster": "https://image.tmdb.org/t/p/original/zt8aQ6ksqK6p1AopC5zVTDS9pKT.jpg"
+    },
+    {
+      "id": 15,
+      "title": "Andrei Rublev",
+      "director": "Andrei Tarkovsky",
+      "releaseDate": "1966-12-16",
+      "rating": 8.2,
+      "description": "The life, times and hardships of 15th-century Russian icon painter Andrei Rublev.",
+      "poster": "https://image.tmdb.org/t/p/original/911VHgkyMy9nwOkoYZrI8UjPs6N.jpg"
+    },
+    {
+      "id": 16,
+      "title": "Amélie",
+      "director": "Jean-Pierre Jeunet",
+      "releaseDate": "2001-04-25",
+      "rating": 8.3,
+      "description": "Despite being caught in her imaginative world, Amelie, a young waitress, decides to help people find happiness. Her quest to spread joy leads her on a journey where she finds true love.",
+      "poster": "https://image.tmdb.org/t/p/original/fdsCPvqCI4iQ5PN1bG1CK3Vxk08.jpg"
+    },
+    {
+      "id": 17,
+      "title": "The Battleship Potemkin",
+      "director": "Sergei Eisenstein",
+      "releaseDate": "1925-12-21",
+      "rating": 8.0,
+      "description": "In the midst of the Russian Revolution of 1905, the crew of the battleship Potemkin mutiny against the brutal, tyrannical regime of the vessel's officers.",
+      "poster": "https://image.tmdb.org/t/p/original/ltuwX0ASJJJMz6pFzL2i2CjoJsF.jpg"
+    },
+    {
+      "id": 18,
+      "title": "Cinema Paradiso",
+      "director": "Giuseppe Tornatore",
+      "releaseDate": "1988-11-17",
+      "rating": 8.5,
+      "description": "A filmmaker recalls his childhood when falling in love with the pictures at the cinema of his home village and forms a deep friendship with the cinema's projectionist.",
+      "poster": "https://image.tmdb.org/t/p/original/8SRUfRUi6x4O68n0VCbDNRa6iGL.jpg"
+    },
+    {
+      "id": 19,
+      "title": "Spirited Away",
+      "director": "Hayao Miyazaki",
+      "releaseDate": "2001-07-20",
+      "rating": 8.6,
+      "description": "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits, where humans are changed into beasts.",
+      "poster": "https://image.tmdb.org/t/p/original/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg"
+    },
+    {
       "id": 20,
       "title": "Gladiator",
       "director": "Ridley Scott",
