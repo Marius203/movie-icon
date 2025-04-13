@@ -34,7 +34,7 @@ async function postMovie(movie) {
 }
 
 // Function to start generating and posting movies
-function startMovieGeneration(interval = 5000) {
+function startMovieGeneration(interval = 5000, onMovieGenerated = null) {
   // Default interval: 5 seconds
   console.log("Starting movie generation service...");
 
@@ -42,7 +42,12 @@ function startMovieGeneration(interval = 5000) {
 
   const generateAndPost = async () => {
     const movie = generateMovie();
-    await postMovie(movie);
+    const postedMovie = await postMovie(movie);
+
+    // Call the callback if provided
+    if (onMovieGenerated && postedMovie) {
+      onMovieGenerated(postedMovie);
+    }
   };
 
   // Generate first movie immediately

@@ -7,6 +7,7 @@ import { useAdminStore } from '@/stores/admin'
 import { useConnectionStore } from '@/stores/connection'
 import { localStorageService } from '@/services/localStorageService'
 import { API_BASE_URL } from '@/config/api'
+import MovieClassificationChart from './MovieClassificationChart.vue'
 
 const router = useRouter()
 const moviesStore = useMoviesStore()
@@ -30,6 +31,58 @@ const loading = ref(false)
 const noMoreMovies = ref(false)
 const scrollActionPending = ref(false)
 
+// Add WebSocket state
+const ws = ref(null)
+const isGenerating = ref(false)
+
+// WebSocket functions
+const connectWebSocket = () => {
+  ws.value = new WebSocket('ws://localhost:3000')
+
+  ws.value.onopen = () => {
+    console.log('WebSocket connected')
+    // Request current status
+    ws.value.send(JSON.stringify({ type: 'GET_STATUS' }))
+  }
+
+  ws.value.onmessage = (event) => {
+    const data = JSON.parse(event.data)
+
+    switch (data.type) {
+      case 'GENERATION_STARTED':
+        isGenerating.value = true
+        break
+      case 'GENERATION_STOPPED':
+        isGenerating.value = false
+        break
+      case 'GENERATION_STATUS':
+        isGenerating.value = data.isGenerating
+        break
+    }
+  }
+
+  ws.value.onerror = (error) => {
+    console.error('WebSocket error:', error)
+  }
+
+  ws.value.onclose = () => {
+    console.log('WebSocket disconnected')
+    // Attempt to reconnect after 5 seconds
+    setTimeout(connectWebSocket, 1000)
+  }
+}
+
+// Function to toggle movie generation
+const toggleMovieGeneration = () => {
+  if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+    if (isGenerating.value) {
+      ws.value.send(JSON.stringify({ type: 'STOP_GENERATION' }))
+    } else {
+      ws.value.send(JSON.stringify({ type: 'START_GENERATION' }))
+    }
+  }
+}
+
 // Update the onMounted function to use pagination
 onMounted(async () => {
   loading.value = true
@@ -40,11 +93,19 @@ onMounted(async () => {
 
   // Add scroll event listener
   window.addEventListener('scroll', handleScroll)
+
+  // Connect WebSocket
+  connectWebSocket()
 })
 
 // Add onUnmounted to clean up the event listener
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+
+  // Close WebSocket connection
+  if (ws.value) {
+    ws.value.close()
+  }
 })
 
 // Function to detect scroll position
@@ -427,355 +488,403 @@ const toggleAddMovieForm = () => {
 
 <!-- html -->
 <template>
-  <div class="min-h-screen bg-slate-900 p-8">
-    <div class="max-w-6xl mx-auto">
-      <!-- Header -->
-      <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-red-600">Admin Dashboard</h1>
-        <div class="flex items-center gap-4">
-          <!-- Add this new sync button with pending operations count -->
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">Admin Dashboard</h1>
+
+    <!-- Admin Controls Section -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-8">
+      <!-- Movie Generation Control -->
+      <div
+        class="md:col-span-5 bg-slate-800 p-4 rounded-lg border border-yellow-600 flex flex-col h-full"
+      >
+        <h2 class="text-3xl font-semibold mb-4 text-yellow-600 text-center">
+          Movie Generation Control
+        </h2>
+        <div class="flex-grow flex flex-col justify-between">
+          <div class="text-sm text-gray-400 flex flex-col items-center justify-center h-full">
+            <div class="flex items-center mb-2">
+              <span class="mr-2 text-lg">{{ isGenerating ? '🟢' : '🔴' }}</span>
+              <p class="text-center">
+                {{
+                  isGenerating
+                    ? 'Movies are being generated automatically'
+                    : 'Movie generation is stopped'
+                }}
+              </p>
+            </div>
+            <p class="text-sm text-gray-500">Generation interval: 5 seconds</p>
+          </div>
           <button
-            v-if="pendingOperationsCount > 0"
-            @click="syncPendingChanges"
-            class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center"
-            :disabled="!connectionStore.isOnline || !connectionStore.isServerAvailable"
+            @click="toggleMovieGeneration"
+            class="w-full bg-yellow-600 text-slate-900 py-3 px-4 rounded font-semibold text-base hover:bg-yellow-700 transition duration-200 ease-in-out flex items-center justify-center mt-4"
+            :class="{ 'bg-red-600 hover:bg-red-700': isGenerating }"
           >
-            <span class="mr-2">Sync Changes</span>
-            <span class="bg-white text-blue-600 rounded-full px-2 py-0.5 text-sm font-bold">
-              {{ pendingOperationsCount }}
-            </span>
-          </button>
-          <button
-            v-if="pendingOperationsCount > 0"
-            @click="clearPendingChanges"
-            class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors ml-2"
-          >
-            Clear Changes
-          </button>
-          <button
-            @click="handleLogout"
-            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            Logout
+            <span class="mr-2 text-xl">{{ isGenerating ? '🛑' : '▶️' }}</span>
+            {{ isGenerating ? 'Stop Generation' : 'Start Generation' }}
           </button>
         </div>
       </div>
 
-      <!-- Add connection status warning when offline -->
+      <!-- Sync Control -->
       <div
-        v-if="!connectionStore.isOnline || !connectionStore.isServerAvailable"
-        class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700"
+        class="md:col-span-5 bg-slate-800 p-4 rounded-lg border border-yellow-600 flex flex-col h-full"
       >
-        <p class="font-bold">Working in offline mode</p>
-        <p>Changes will be saved locally and synchronized when connection is restored.</p>
-      </div>
-
-      <!-- Add Movie Button -->
-      <div class="mb-6">
-        <button
-          @click="toggleAddMovieForm"
-          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center"
-        >
-          <span class="mr-2">{{ showAddMovieForm ? 'Cancel' : 'Add New Movie' }}</span>
-          <span v-if="!showAddMovieForm">+</span>
-          <span v-else>×</span>
-        </button>
-      </div>
-
-      <!-- Add Movie Form -->
-      <div
-        v-if="showAddMovieForm"
-        class="bg-slate-800 rounded-lg shadow-lg p-6 border-2 border-green-600 mb-6"
-      >
-        <h2 class="text-xl font-semibold text-green-600 mb-4">Add New Movie</h2>
-
-        <div class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-300">Title</label>
-              <input
-                v-model="newMovie.title"
-                type="text"
-                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
-                :class="{ 'border-red-500': errors.title }"
-              />
-              <p v-if="errors.title" class="text-red-500 text-sm mt-1">{{ errors.title }}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-300">Director</label>
-              <input
-                v-model="newMovie.director"
-                type="text"
-                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
-                :class="{ 'border-red-500': errors.director }"
-              />
-              <p v-if="errors.director" class="text-red-500 text-sm mt-1">{{ errors.director }}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-300">Release Date</label>
-              <input
-                v-model="newMovie.releaseDate"
-                type="date"
-                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
-                :class="{ 'border-red-500': errors.releaseDate }"
-              />
-              <p v-if="errors.releaseDate" class="text-red-500 text-sm mt-1">
-                {{ errors.releaseDate }}
-              </p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-300">Rating</label>
-              <input
-                v-model="newMovie.rating"
-                type="number"
-                step="0.1"
-                min="0"
-                max="10"
-                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
-                :class="{ 'border-red-500': errors.rating }"
-              />
-              <p v-if="errors.rating" class="text-red-500 text-sm mt-1">{{ errors.rating }}</p>
-            </div>
-
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-300">Description</label>
-              <textarea
-                v-model="newMovie.description"
-                rows="3"
-                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
-                :class="{ 'border-red-500': errors.description }"
-              ></textarea>
-              <p v-if="errors.description" class="text-red-500 text-sm mt-1">
-                {{ errors.description }}
-              </p>
-            </div>
-
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-300">Poster URL</label>
-              <input
-                v-model="newMovie.poster"
-                type="text"
-                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
-                :class="{ 'border-red-500': errors.poster }"
-              />
-              <p v-if="errors.poster" class="text-red-500 text-sm mt-1">{{ errors.poster }}</p>
-            </div>
-
-            <!-- Add trailer field -->
-            <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-300"
-                >Trailer Video (Optional, max 1GB)</label
-              >
-              <input
-                type="file"
-                accept="video/*"
-                @change="handleNewTrailerUpload"
-                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-green-600 file:text-white"
-              />
-              <p class="text-gray-400 text-xs mt-1">Supported formats: MP4, WebM, MOV</p>
-
-              <!-- Preview trailer -->
-              <div v-if="newMovieTrailerPreview" class="mt-3">
-                <p class="text-sm font-medium text-gray-300 mb-1">Trailer Preview:</p>
-                <video controls class="w-full rounded" :src="newMovieTrailerPreview"></video>
-              </div>
-            </div>
+        <h1 class="text-5xl font-semibold mb-4 text-yellow-600 text-center">Sync Control</h1>
+        <div class="flex-grow flex flex-col justify-between">
+          <div class="text-sm text-gray-400 flex items-center justify-center h-full">
+            <p class="text-center">Pending changes will be synced when online</p>
           </div>
-
-          <div class="flex justify-end">
+          <div class="space-y-3 mt-4">
             <button
-              @click="addMovie"
-              class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+              @click="syncPendingChanges"
+              class="w-full bg-yellow-600 text-slate-900 py-3 px-4 rounded font-semibold text-base hover:bg-yellow-700 transition duration-200 ease-in-out flex items-center justify-center"
+              :disabled="pendingOperationsCount === 0"
+              :class="{ 'opacity-50 cursor-not-allowed': pendingOperationsCount === 0 }"
             >
-              Add Movie
+              <span class="mr-2 text-xl">🔄</span>
+              Sync Pending Changes
+              <span
+                v-if="pendingOperationsCount > 0"
+                class="ml-2 bg-red-600 text-white px-3 py-1 rounded-full text-sm"
+              >
+                {{ pendingOperationsCount }}
+              </span>
+            </button>
+            <button
+              @click="clearPendingChanges"
+              class="w-full bg-red-600 text-white py-3 px-4 rounded font-semibold text-base hover:bg-red-700 transition duration-200 ease-in-out flex items-center justify-center"
+              :disabled="pendingOperationsCount === 0"
+              :class="{ 'opacity-50 cursor-not-allowed': pendingOperationsCount === 0 }"
+            >
+              <span class="mr-2 text-xl">🗑️</span>
+              Clear Pending Changes
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Movie List -->
-      <div class="bg-slate-800 rounded-lg shadow-lg p-6 border-2 border-red-600">
-        <h2 class="text-xl font-semibold text-red-600 mb-4">Manage Movies</h2>
+      <!-- Movie Classification Chart -->
+      <div
+        class="md:col-span-2 bg-slate-800 p-4 rounded-lg border border-yellow-600 flex flex-col h-full"
+      >
+        <h2 class="text-lg font-semibold mb-4 text-yellow-600 text-center">Movie Classification</h2>
+        <div class="flex-grow min-h-[200px]">
+          <MovieClassificationChart
+            :movies="displayedMovies"
+            :get-movie-classification="moviesStore.getMovieClassification"
+          />
+        </div>
+      </div>
+    </div>
 
-        <div class="space-y-4">
-          <div v-for="movie in displayedMovies" :key="movie.id" class="bg-slate-700 p-4 rounded-lg">
-            <!-- View Mode -->
-            <div v-if="editingMovie !== movie" class="flex justify-between items-start">
-              <div class="flex gap-4">
-                <img
-                  :src="movie.poster"
-                  :alt="movie.title"
-                  class="w-24 h-36 object-cover rounded"
-                />
-                <div>
-                  <h3 class="text-xl font-bold text-white">{{ movie.title }}</h3>
-                  <p class="text-gray-300">Director: {{ movie.director }}</p>
-                  <p class="text-gray-300">Release Date: {{ movie.releaseDate }}</p>
-                  <p class="text-gray-300">Rating: {{ movie.rating }}/10</p>
-                  <p class="text-gray-300">Description: {{ movie.description }}</p>
+    <!-- Add connection status warning when offline -->
+    <div
+      v-if="!connectionStore.isOnline || !connectionStore.isServerAvailable"
+      class="mb-6 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700"
+    >
+      <p class="font-bold">Working in offline mode</p>
+      <p>Changes will be saved locally and synchronized when connection is restored.</p>
+    </div>
 
-                  <!-- Show trailer if available -->
-                  <div v-if="movie.trailer" class="mt-4">
-                    <p class="text-gray-300 mb-2">Trailer:</p>
-                    <video
-                      controls
-                      class="w-full max-w-md rounded"
-                      :src="`${API_BASE_URL}${movie.trailer}`"
-                    ></video>
-                  </div>
-                </div>
-              </div>
-              <div class="flex gap-2">
-                <button
-                  @click="startEdit(movie)"
-                  class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-                >
-                  Edit
-                </button>
-                <button
-                  @click="deleteMovie(movie)"
-                  class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
+    <!-- Add Movie Button -->
+    <div class="mb-6">
+      <button
+        @click="toggleAddMovieForm"
+        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center"
+      >
+        <span class="mr-2">{{ showAddMovieForm ? 'Cancel' : 'Add New Movie' }}</span>
+        <span v-if="!showAddMovieForm">+</span>
+        <span v-else>×</span>
+      </button>
+    </div>
 
-            <!-- Edit Mode -->
-            <div v-else class="space-y-4">
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-300">Title</label>
-                  <input
-                    v-model="editedMovie.title"
-                    type="text"
-                    class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
-                    :class="{ 'border-red-500': errors.title }"
-                  />
-                  <p v-if="errors.title" class="text-red-500 text-sm mt-1">{{ errors.title }}</p>
-                </div>
+    <!-- Movie Generation Control -->
+    <!-- Add Movie Form -->
+    <div
+      v-if="showAddMovieForm"
+      class="bg-slate-800 rounded-lg shadow-lg p-6 border-2 border-green-600 mb-6"
+    >
+      <h2 class="text-xl font-semibold text-green-600 mb-4">Add New Movie</h2>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-300">Director</label>
-                  <input
-                    v-model="editedMovie.director"
-                    type="text"
-                    class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
-                    :class="{ 'border-red-500': errors.director }"
-                  />
-                  <p v-if="errors.director" class="text-red-500 text-sm mt-1">
-                    {{ errors.director }}
-                  </p>
-                </div>
+      <div class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300">Title</label>
+            <input
+              v-model="newMovie.title"
+              type="text"
+              class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+              :class="{ 'border-red-500': errors.title }"
+            />
+            <p v-if="errors.title" class="text-red-500 text-sm mt-1">{{ errors.title }}</p>
+          </div>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-300">Release Date</label>
-                  <input
-                    v-model="editedMovie.releaseDate"
-                    type="date"
-                    class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
-                    :class="{ 'border-red-500': errors.releaseDate }"
-                  />
-                  <p v-if="errors.releaseDate" class="text-red-500 text-sm mt-1">
-                    {{ errors.releaseDate }}
-                  </p>
-                </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300">Director</label>
+            <input
+              v-model="newMovie.director"
+              type="text"
+              class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+              :class="{ 'border-red-500': errors.director }"
+            />
+            <p v-if="errors.director" class="text-red-500 text-sm mt-1">{{ errors.director }}</p>
+          </div>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-300">Rating</label>
-                  <input
-                    v-model="editedMovie.rating"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="10"
-                    class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
-                    :class="{ 'border-red-500': errors.rating }"
-                  />
-                  <p v-if="errors.rating" class="text-red-500 text-sm mt-1">{{ errors.rating }}</p>
-                </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300">Release Date</label>
+            <input
+              v-model="newMovie.releaseDate"
+              type="date"
+              class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+              :class="{ 'border-red-500': errors.releaseDate }"
+            />
+            <p v-if="errors.releaseDate" class="text-red-500 text-sm mt-1">
+              {{ errors.releaseDate }}
+            </p>
+          </div>
 
-                <div class="col-span-2">
-                  <label class="block text-sm font-medium text-gray-300">Description</label>
-                  <textarea
-                    v-model="editedMovie.description"
-                    rows="3"
-                    class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
-                    :class="{ 'border-red-500': errors.description }"
-                  ></textarea>
-                  <p v-if="errors.description" class="text-red-500 text-sm mt-1">
-                    {{ errors.description }}
-                  </p>
-                </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300">Rating</label>
+            <input
+              v-model="newMovie.rating"
+              type="number"
+              step="0.1"
+              min="0"
+              max="10"
+              class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+              :class="{ 'border-red-500': errors.rating }"
+            />
+            <p v-if="errors.rating" class="text-red-500 text-sm mt-1">{{ errors.rating }}</p>
+          </div>
 
-                <div class="col-span-2">
-                  <label class="block text-sm font-medium text-gray-300">Poster URL</label>
-                  <input
-                    v-model="editedMovie.poster"
-                    type="text"
-                    class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
-                    :class="{ 'border-red-500': errors.poster }"
-                  />
-                  <p v-if="errors.poster" class="text-red-500 text-sm mt-1">{{ errors.poster }}</p>
-                </div>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-gray-300">Description</label>
+            <textarea
+              v-model="newMovie.description"
+              rows="3"
+              class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+              :class="{ 'border-red-500': errors.description }"
+            ></textarea>
+            <p v-if="errors.description" class="text-red-500 text-sm mt-1">
+              {{ errors.description }}
+            </p>
+          </div>
 
-                <!-- Add trailer field to edit form -->
-                <div class="col-span-2">
-                  <label class="block text-sm font-medium text-gray-300"
-                    >Trailer Video (Optional, max 1GB)</label
-                  >
-                  <input
-                    type="file"
-                    accept="video/*"
-                    @change="handleEditTrailerUpload"
-                    class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-red-600 file:text-white"
-                  />
-                  <p class="text-gray-400 text-xs mt-1">Leave empty to keep existing trailer</p>
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-gray-300">Poster URL</label>
+            <input
+              v-model="newMovie.poster"
+              type="text"
+              class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white"
+              :class="{ 'border-red-500': errors.poster }"
+            />
+            <p v-if="errors.poster" class="text-red-500 text-sm mt-1">{{ errors.poster }}</p>
+          </div>
 
-                  <!-- Preview existing or new trailer -->
-                  <div v-if="trailerPreview" class="mt-3">
-                    <p class="text-sm font-medium text-gray-300 mb-1">Trailer Preview:</p>
-                    <video controls class="w-full rounded" :src="trailerPreview"></video>
-                  </div>
-                </div>
-              </div>
+          <!-- Add trailer field -->
+          <div class="col-span-2">
+            <label class="block text-sm font-medium text-gray-300"
+              >Trailer Video (Optional, max 1GB)</label
+            >
+            <input
+              type="file"
+              accept="video/*"
+              @change="handleNewTrailerUpload"
+              class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-green-600 file:text-white"
+            />
+            <p class="text-gray-400 text-xs mt-1">Supported formats: MP4, WebM, MOV</p>
 
-              <div class="flex justify-end gap-2">
-                <button
-                  @click="cancelEdit"
-                  class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  @click="saveEdit"
-                  class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                >
-                  Save
-                </button>
-              </div>
+            <!-- Preview trailer -->
+            <div v-if="newMovieTrailerPreview" class="mt-3">
+              <p class="text-sm font-medium text-gray-300 mb-1">Trailer Preview:</p>
+              <video controls class="w-full rounded" :src="newMovieTrailerPreview"></video>
             </div>
           </div>
         </div>
 
-        <!-- Loading indicator -->
-        <div v-if="loading" class="text-center py-4">
-          <div
-            class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-red-600 border-r-transparent"
-          ></div>
-          <p class="mt-2 text-red-600">Loading more movies...</p>
+        <div class="flex justify-end">
+          <button
+            @click="addMovie"
+            class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+          >
+            Add Movie
+          </button>
         </div>
+      </div>
+    </div>
 
-        <!-- End of list message -->
-        <div
-          v-if="noMoreMovies && displayedMovies.length > 0"
-          class="text-center py-4 text-gray-400"
-        >
-          End of movie list
+    <!-- Movie List -->
+    <div class="bg-slate-800 rounded-lg shadow-lg p-6 border-2 border-red-600">
+      <h2 class="text-xl font-semibold text-red-600 mb-4">Manage Movies</h2>
+
+      <div class="space-y-4">
+        <div v-for="movie in displayedMovies" :key="movie.id" class="bg-slate-700 p-4 rounded-lg">
+          <!-- View Mode -->
+          <div v-if="editingMovie !== movie" class="flex justify-between items-start">
+            <div class="flex gap-4">
+              <img :src="movie.poster" :alt="movie.title" class="w-24 h-36 object-cover rounded" />
+              <div>
+                <h3 class="text-xl font-bold text-white">{{ movie.title }}</h3>
+                <p class="text-gray-300">Director: {{ movie.director }}</p>
+                <p class="text-gray-300">Release Date: {{ movie.releaseDate }}</p>
+                <p class="text-gray-300">Rating: {{ movie.rating }}/10</p>
+                <p class="text-gray-300">Description: {{ movie.description }}</p>
+
+                <!-- Show trailer if available -->
+                <div v-if="movie.trailer" class="mt-4">
+                  <p class="text-gray-300 mb-2">Trailer:</p>
+                  <video
+                    controls
+                    class="w-full max-w-md rounded"
+                    :src="`${API_BASE_URL}${movie.trailer}`"
+                  ></video>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button
+                @click="startEdit(movie)"
+                class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                @click="deleteMovie(movie)"
+                class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+
+          <!-- Edit Mode -->
+          <div v-else class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-300">Title</label>
+                <input
+                  v-model="editedMovie.title"
+                  type="text"
+                  class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
+                  :class="{ 'border-red-500': errors.title }"
+                />
+                <p v-if="errors.title" class="text-red-500 text-sm mt-1">{{ errors.title }}</p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-300">Director</label>
+                <input
+                  v-model="editedMovie.director"
+                  type="text"
+                  class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
+                  :class="{ 'border-red-500': errors.director }"
+                />
+                <p v-if="errors.director" class="text-red-500 text-sm mt-1">
+                  {{ errors.director }}
+                </p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-300">Release Date</label>
+                <input
+                  v-model="editedMovie.releaseDate"
+                  type="date"
+                  class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
+                  :class="{ 'border-red-500': errors.releaseDate }"
+                />
+                <p v-if="errors.releaseDate" class="text-red-500 text-sm mt-1">
+                  {{ errors.releaseDate }}
+                </p>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-300">Rating</label>
+                <input
+                  v-model="editedMovie.rating"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="10"
+                  class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
+                  :class="{ 'border-red-500': errors.rating }"
+                />
+                <p v-if="errors.rating" class="text-red-500 text-sm mt-1">{{ errors.rating }}</p>
+              </div>
+
+              <div class="col-span-2">
+                <label class="block text-sm font-medium text-gray-300">Description</label>
+                <textarea
+                  v-model="editedMovie.description"
+                  rows="3"
+                  class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
+                  :class="{ 'border-red-500': errors.description }"
+                ></textarea>
+                <p v-if="errors.description" class="text-red-500 text-sm mt-1">
+                  {{ errors.description }}
+                </p>
+              </div>
+
+              <div class="col-span-2">
+                <label class="block text-sm font-medium text-gray-300">Poster URL</label>
+                <input
+                  v-model="editedMovie.poster"
+                  type="text"
+                  class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white"
+                  :class="{ 'border-red-500': errors.poster }"
+                />
+                <p v-if="errors.poster" class="text-red-500 text-sm mt-1">{{ errors.poster }}</p>
+              </div>
+
+              <!-- Add trailer field to edit form -->
+              <div class="col-span-2">
+                <label class="block text-sm font-medium text-gray-300"
+                  >Trailer Video (Optional, max 1GB)</label
+                >
+                <input
+                  type="file"
+                  accept="video/*"
+                  @change="handleEditTrailerUpload"
+                  class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-red-600 file:text-white"
+                />
+                <p class="text-gray-400 text-xs mt-1">Leave empty to keep existing trailer</p>
+
+                <!-- Preview existing or new trailer -->
+                <div v-if="trailerPreview" class="mt-3">
+                  <p class="text-sm font-medium text-gray-300 mb-1">Trailer Preview:</p>
+                  <video controls class="w-full rounded" :src="trailerPreview"></video>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-2">
+              <button
+                @click="cancelEdit"
+                class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                @click="saveEdit"
+                class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+              >
+                Save
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- Loading indicator -->
+      <div v-if="loading" class="text-center py-4">
+        <div
+          class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-red-600 border-r-transparent"
+        ></div>
+        <p class="mt-2 text-red-600">Loading more movies...</p>
+      </div>
+
+      <!-- End of list message -->
+      <div v-if="noMoreMovies && displayedMovies.length > 0" class="text-center py-4 text-gray-400">
+        End of movie list
       </div>
     </div>
   </div>

@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const multer = require("multer"); // Add this for file uploads
 const { startMovieGeneration } = require("./movieGenerator");
+const WebSocket = require("ws");
 
 const app = express();
 const PORT = 3000;
@@ -11,6 +12,7 @@ const PORT = 3000;
 // Add state for movie generation
 let stopGeneration = null;
 let isGenerating = false;
+let wss = null;
 
 // Configure multer for trailer uploads
 const storage = multer.diskStorage({
@@ -217,30 +219,45 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-// Add endpoints to control movie generation
-app.post("/movies/generation/start", (req, res) => {
-  if (!isGenerating) {
-    stopGeneration = startMovieGeneration();
-    isGenerating = true;
-    res.json({ status: "started" });
-  } else {
-    res.json({ status: "already running" });
-  }
-});
+// Create WebSocket server for movie generation
+function createWebSocketServer(server) {
+  wss = new WebSocket.Server({ server });
 
-app.post("/movies/generation/stop", (req, res) => {
-  if (isGenerating && stopGeneration) {
-    stopGeneration();
-    isGenerating = false;
-    res.json({ status: "stopped" });
-  } else {
-    res.json({ status: "not running" });
-  }
-});
+  wss.on("connection", (ws) => {
+    console.log("New WebSocket connection established");
 
-app.get("/movies/generation/status", (req, res) => {
-  res.json({ isGenerating });
-});
+    ws.on("message", (message) => {
+      const data = JSON.parse(message);
+
+      if (data.type === "START_GENERATION") {
+        if (!isGenerating) {
+          stopGeneration = startMovieGeneration(5000, (movie) => {
+            // Broadcast new movie to all connected clients
+            wss.clients.forEach((client) => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ type: "NEW_MOVIE", movie }));
+              }
+            });
+          });
+          isGenerating = true;
+          ws.send(JSON.stringify({ type: "GENERATION_STARTED" }));
+        }
+      } else if (data.type === "STOP_GENERATION") {
+        if (isGenerating && stopGeneration) {
+          stopGeneration();
+          isGenerating = false;
+          ws.send(JSON.stringify({ type: "GENERATION_STOPPED" }));
+        }
+      } else if (data.type === "GET_STATUS") {
+        ws.send(JSON.stringify({ type: "GENERATION_STATUS", isGenerating }));
+      }
+    });
+
+    ws.on("close", () => {
+      console.log("WebSocket connection closed");
+    });
+  });
+}
 
 // Only start the server if this file is run directly
 if (require.main === module) {
@@ -249,6 +266,9 @@ if (require.main === module) {
     console.log(
       `Server is accessible on your local network at: http://${getLocalIP()}:${PORT}`
     );
+
+    // Create WebSocket server
+    createWebSocketServer(server);
   });
 
   // Handle graceful shutdown
@@ -258,6 +278,12 @@ if (require.main === module) {
     if (isGenerating && stopGeneration) {
       stopGeneration();
       isGenerating = false;
+    }
+    // Close WebSocket server
+    if (wss) {
+      wss.close(() => {
+        console.log("WebSocket server closed");
+      });
     }
     server.close(() => {
       console.log("HTTP server closed");
