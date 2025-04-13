@@ -5,6 +5,7 @@ import { useMoviesStore } from '@/stores/movies'
 import { useUsersStore } from '@/stores/users'
 import MovieDetailsPopup from './MovieDetailsPopup.vue'
 import MovieClassificationChart from './MovieClassificationChart.vue'
+import axios from 'axios'
 
 const moviesStore = useMoviesStore()
 const userMoviesStore = useUsersStore()
@@ -23,6 +24,23 @@ const loading = ref(false)
 const noMoreMovies = ref(false)
 const scrollActionPending = ref(false)
 
+// Add movie generation state
+const isGenerating = ref(false)
+
+// Function to toggle movie generation
+const toggleMovieGeneration = async () => {
+  try {
+    if (isGenerating.value) {
+      await axios.post('http://localhost:3000/movies/generation/stop')
+    } else {
+      await axios.post('http://localhost:3000/movies/generation/start')
+    }
+    isGenerating.value = !isGenerating.value
+  } catch (error) {
+    console.error('Error toggling movie generation:', error)
+  }
+}
+
 // Load initial movies
 onMounted(async () => {
   loading.value = true
@@ -32,6 +50,14 @@ onMounted(async () => {
 
   // Add scroll event listener
   window.addEventListener('scroll', handleScroll)
+
+  // Check generation status
+  try {
+    const response = await axios.get('http://localhost:3000/movies/generation/status')
+    isGenerating.value = response.data.isGenerating
+  } catch (error) {
+    console.error('Error checking generation status:', error)
+  }
 })
 
 onUnmounted(() => {
@@ -171,6 +197,17 @@ const handleStealMovie = (movie) => {
 
   <!-- Main content wrapper -->
   <div class="max-w-3xl mx-auto">
+    <!-- Generation control button -->
+    <div class="text-center mb-5">
+      <button
+        @click="toggleMovieGeneration"
+        class="bg-yellow-600 text-slate-900 py-2 px-4 rounded font-semibold text-sm hover:bg-yellow-700 transition duration-200 ease-in-out"
+        :class="{ 'bg-red-600 hover:bg-red-700': isGenerating }"
+      >
+        {{ isGenerating ? 'Stop Generation' : 'Start Generation' }}
+      </button>
+    </div>
+
     <!-- Sorting controls -->
     <div class="max-w-3xl mx-auto mb-5 text-center">
       <button

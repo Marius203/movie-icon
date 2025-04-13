@@ -3,9 +3,14 @@ const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer"); // Add this for file uploads
+const { startMovieGeneration } = require("./movieGenerator");
 
 const app = express();
 const PORT = 3000;
+
+// Add state for movie generation
+let stopGeneration = null;
+let isGenerating = false;
 
 // Configure multer for trailer uploads
 const storage = multer.diskStorage({
@@ -212,6 +217,31 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+// Add endpoints to control movie generation
+app.post("/movies/generation/start", (req, res) => {
+  if (!isGenerating) {
+    stopGeneration = startMovieGeneration();
+    isGenerating = true;
+    res.json({ status: "started" });
+  } else {
+    res.json({ status: "already running" });
+  }
+});
+
+app.post("/movies/generation/stop", (req, res) => {
+  if (isGenerating && stopGeneration) {
+    stopGeneration();
+    isGenerating = false;
+    res.json({ status: "stopped" });
+  } else {
+    res.json({ status: "not running" });
+  }
+});
+
+app.get("/movies/generation/status", (req, res) => {
+  res.json({ isGenerating });
+});
+
 // Only start the server if this file is run directly
 if (require.main === module) {
   const server = app.listen(PORT, "0.0.0.0", () => {
@@ -224,6 +254,11 @@ if (require.main === module) {
   // Handle graceful shutdown
   process.on("SIGTERM", () => {
     console.log("SIGTERM signal received: closing HTTP server");
+    // Stop movie generation if it's running
+    if (isGenerating && stopGeneration) {
+      stopGeneration();
+      isGenerating = false;
+    }
     server.close(() => {
       console.log("HTTP server closed");
       process.exit(0);
