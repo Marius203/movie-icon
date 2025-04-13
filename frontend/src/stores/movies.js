@@ -108,6 +108,44 @@ export const useMoviesStore = defineStore('movies', () => {
     }
   }
 
+  // Add a new movie with trailer via API
+  async function addMovieWithTrailer(formData) {
+    try {
+      if (connectionStore.isOnline && connectionStore.isServerAvailable) {
+        const config = {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+        const response = await axios.post(`${API_BASE_URL}/movies`, formData, config)
+        // Add the newly created movie to local state
+        movies.value.push(response.data)
+        // Cache locally
+        await localStorageService.addMovie(response.data)
+        return response.data
+      } else {
+        // For offline mode, we can't really handle file uploads
+        // So we'll just add the basic movie info without the trailer
+        const basicMovieData = {}
+        formData.forEach((value, key) => {
+          if (key !== 'trailer') basicMovieData[key] = value
+        })
+
+        const localMovie = { ...basicMovieData, id: Date.now(), isOffline: true }
+        await localStorageService.addMovie(localMovie)
+        await localStorageService.queueOperation({
+          type: 'CREATE',
+          data: basicMovieData,
+        })
+        movies.value.push(localMovie)
+        return localMovie
+      }
+    } catch (error) {
+      console.error('Error adding movie with trailer:', error)
+      throw error
+    }
+  }
+
   // Delete a movie via API
   async function deleteMovieAPI(movieId) {
     try {
@@ -173,6 +211,50 @@ export const useMoviesStore = defineStore('movies', () => {
       }
     } catch (error) {
       console.error('Error updating movie:', error)
+      throw error
+    }
+  }
+
+  // Update movie with trailer via API
+  async function updateMovieWithTrailer(movieId, formData) {
+    try {
+      if (connectionStore.isOnline && connectionStore.isServerAvailable) {
+        const config = {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+        const response = await axios.put(`${API_BASE_URL}/movies/${movieId}`, formData, config)
+        // Update in local state
+        const index = movies.value.findIndex((movie) => movie.id === movieId)
+        if (index !== -1) {
+          movies.value[index] = response.data
+        }
+        // Update in local storage
+        await localStorageService.updateMovie(response.data)
+        return response.data
+      } else {
+        // For offline mode, we'll update without the trailer
+        const basicMovieData = {}
+        formData.forEach((value, key) => {
+          if (key !== 'trailer') basicMovieData[key] = value
+        })
+
+        const localMovie = { ...basicMovieData, id: movieId, isOffline: true }
+        await localStorageService.updateMovie(localMovie)
+        await localStorageService.queueOperation({
+          type: 'UPDATE',
+          data: localMovie,
+        })
+
+        const index = movies.value.findIndex((movie) => movie.id === movieId)
+        if (index !== -1) {
+          movies.value[index] = localMovie
+        }
+        return localMovie
+      }
+    } catch (error) {
+      console.error('Error updating movie with trailer:', error)
       throw error
     }
   }
@@ -248,8 +330,10 @@ export const useMoviesStore = defineStore('movies', () => {
     fetchMoviesWithSort,
     fetchMoviesByDirector,
     addMovieAPI,
+    addMovieWithTrailer,
     deleteMovieAPI,
     updateMovieAPI,
+    updateMovieWithTrailer,
     syncWithServer,
   }
 })

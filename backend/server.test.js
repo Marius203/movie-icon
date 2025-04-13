@@ -8,7 +8,7 @@ const cors = require("cors");
 const app = require("./server");
 
 // Path to the data file
-const dataFilePath = path.join(__dirname, "data.json");
+const dataFilePath = path.join(__dirname, "testdata.json");
 
 // Backup the original data file
 let originalData;

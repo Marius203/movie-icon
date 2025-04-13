@@ -4,6 +4,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 // import { useMoviesStore } from '@/stores/movies' // We might change this later for user-specific data
 import { useUsersStore } from '@/stores/users' // Import the new user store
 import MovieClassificationChart from './MovieClassificationChart.vue'
+import MyTasteMovieDetailsPopup from './MyTasteMovieDetailsPopup.vue'
 
 // const moviesStore = useMoviesStore()
 const userMoviesStore = useUsersStore() // Use the user store instance
@@ -183,6 +184,22 @@ const paginationButtons = computed(() => {
   }
   return buttons
 })
+
+// Add state for movie details popup
+const selectedMovie = ref(null)
+const showMovieDetails = ref(false)
+
+// Add function to show movie details
+const showDetails = (movie) => {
+  selectedMovie.value = movie
+  showMovieDetails.value = true
+}
+
+// Add function to close movie details
+const closeDetails = () => {
+  showMovieDetails.value = false
+  selectedMovie.value = null
+}
 </script>
 
 <!-- html -->
@@ -269,12 +286,13 @@ const paginationButtons = computed(() => {
       </select>
     </div>
 
-    <!-- Movie List (Use user store data, change structure to ul/li) -->
+    <!-- Movie List -->
     <ul v-if="movies.length > 0" class="list-none p-0 max-w-3xl mx-auto">
       <li
         v-for="(movie, index) in paginatedMovies"
         :key="movie.title + movie.director + index"
-        class="border-2 border-blue-400 rounded-lg p-4 mb-5 shadow-md bg-slate-800 w-11/12 mx-auto"
+        class="border-2 border-blue-400 rounded-lg p-4 mb-5 shadow-md bg-slate-800 w-11/12 mx-auto cursor-pointer hover:bg-slate-700 transition-colors"
+        @click="showDetails(movie)"
       >
         <!-- Movie Title and Header Section -->
         <div class="flex justify-between items-center mb-2 border-b border-blue-400 pb-2">
@@ -286,14 +304,14 @@ const paginationButtons = computed(() => {
             <!-- Edit Rating button -->
             <button
               v-if="editingRating !== index"
-              @click="startEditRating(index, movie.rating)"
+              @click.stop="startEditRating(index, movie.rating)"
               class="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 border border-blue-400 rounded hover:bg-blue-400 hover:text-slate-900 transition duration-150"
             >
               Edit Rating
             </button>
             <!-- Remove button -->
             <button
-              @click="removeMovie(index)"
+              @click.stop="removeMovie(index)"
               class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400 rounded hover:bg-red-400 hover:text-white transition duration-150"
             >
               Remove
@@ -388,4 +406,12 @@ const paginationButtons = computed(() => {
       </button>
     </div>
   </div>
+
+  <!-- Add Movie Details Popup -->
+  <MyTasteMovieDetailsPopup
+    v-if="selectedMovie"
+    :movie="selectedMovie"
+    :isOpen="showMovieDetails"
+    @close="closeDetails"
+  />
 </template>
