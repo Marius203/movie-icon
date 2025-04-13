@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import { localStorageService } from '@/services/localStorageService'
 import { useConnectionStore } from '@/stores/connection'
+import { API_BASE_URL } from '@/config/api'
 
 export const useMoviesStore = defineStore('movies', () => {
   const connectionStore = useConnectionStore()
@@ -16,9 +17,7 @@ export const useMoviesStore = defineStore('movies', () => {
   async function fetchMovies(limit = 20, offset = 0, delayMs = 500) {
     try {
       if (connectionStore.isOnline && connectionStore.isServerAvailable) {
-        const response = await axios.get(
-          `http://localhost:3000/movies?limit=${limit}&offset=${offset}`,
-        )
+        const response = await axios.get(`${API_BASE_URL}/movies?limit=${limit}&offset=${offset}`)
         movies.value = response.data
         // Cache the movies locally
         await Promise.all(response.data.map((movie) => localStorageService.addMovie(movie)))
@@ -40,7 +39,7 @@ export const useMoviesStore = defineStore('movies', () => {
     try {
       if (connectionStore.isOnline && connectionStore.isServerAvailable) {
         const response = await axios.get(
-          `http://localhost:3000/movies?sort=${sortBy}&order=${order}&limit=${limit}&offset=${offset}`,
+          `${API_BASE_URL}/movies?sort=${sortBy}&order=${order}&limit=${limit}&offset=${offset}`,
         )
         movies.value = response.data
         return response.data
@@ -68,7 +67,7 @@ export const useMoviesStore = defineStore('movies', () => {
   async function fetchMoviesByDirector(director) {
     try {
       if (connectionStore.isOnline && connectionStore.isServerAvailable) {
-        const response = await axios.get(`http://localhost:3000/movies?director=${director}`)
+        const response = await axios.get(`${API_BASE_URL}/movies?director=${director}`)
         movies.value = response.data
       } else {
         // Offline mode: filter locally
@@ -86,7 +85,7 @@ export const useMoviesStore = defineStore('movies', () => {
   async function addMovieAPI(movie) {
     try {
       if (connectionStore.isOnline && connectionStore.isServerAvailable) {
-        const response = await axios.post('http://localhost:3000/movies', movie)
+        const response = await axios.post(`${API_BASE_URL}/movies`, movie)
         // Add the newly created movie to local state
         movies.value.push(response.data)
         // Cache locally
@@ -113,7 +112,7 @@ export const useMoviesStore = defineStore('movies', () => {
   async function deleteMovieAPI(movieId) {
     try {
       if (connectionStore.isOnline && connectionStore.isServerAvailable) {
-        await axios.delete(`http://localhost:3000/movies/${movieId}`)
+        await axios.delete(`${API_BASE_URL}/movies/${movieId}`)
         // Remove from local state
         const index = movies.value.findIndex((movie) => movie.id === movieId)
         if (index !== -1) {
@@ -148,7 +147,7 @@ export const useMoviesStore = defineStore('movies', () => {
   async function updateMovieAPI(movieId, updatedMovie) {
     try {
       if (connectionStore.isOnline && connectionStore.isServerAvailable) {
-        const response = await axios.put(`http://localhost:3000/movies/${movieId}`, updatedMovie)
+        const response = await axios.put(`${API_BASE_URL}/movies/${movieId}`, updatedMovie)
         // Update in local state
         const index = movies.value.findIndex((movie) => movie.id === movieId)
         if (index !== -1) {
