@@ -16,11 +16,27 @@ const newMovie = ref({
   poster: '',
 })
 
+// Add trailer file ref
+const trailerFile = ref(null)
+const trailerPreview = ref(null)
+
 // Validation errors
 const errors = ref({})
 
+// Handle trailer file selection
+const handleTrailerUpload = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    trailerFile.value = file
+    trailerPreview.value = URL.createObjectURL(file)
+  } else {
+    trailerFile.value = null
+    trailerPreview.value = null
+  }
+}
+
 // Form submission
-const submitForm = () => {
+const submitForm = async () => {
   // Reset errors
   errors.value = {}
 
@@ -59,15 +75,30 @@ const submitForm = () => {
 
   // If no errors, proceed with submission
   if (Object.keys(errors.value).length === 0) {
-    // Add the movie to the store
-    moviesStore.addMovie({
-      title: newMovie.value.title,
-      director: newMovie.value.director,
-      releaseDate: newMovie.value.releaseDate,
-      rating: parseFloat(newMovie.value.rating),
-      description: newMovie.value.description,
-      poster: newMovie.value.poster,
-    })
+    // Create FormData for trailer upload
+    if (trailerFile.value) {
+      const formData = new FormData()
+      formData.append('title', newMovie.value.title)
+      formData.append('director', newMovie.value.director)
+      formData.append('releaseDate', newMovie.value.releaseDate)
+      formData.append('rating', newMovie.value.rating)
+      formData.append('description', newMovie.value.description)
+      formData.append('poster', newMovie.value.poster)
+      formData.append('trailer', trailerFile.value)
+
+      // Add the movie with trailer to the store
+      await moviesStore.addMovieWithTrailer(formData)
+    } else {
+      // No trailer, use regular method
+      await moviesStore.addMovie({
+        title: newMovie.value.title,
+        director: newMovie.value.director,
+        releaseDate: newMovie.value.releaseDate,
+        rating: parseFloat(newMovie.value.rating),
+        description: newMovie.value.description,
+        poster: newMovie.value.poster,
+      })
+    }
 
     // Navigate back to the movie list
     router.push('/')
@@ -178,6 +209,31 @@ const cancelAdd = () => {
           :class="{ 'border-red-500 bg-red-50': errors.poster }"
         />
         <span class="text-red-500 text-sm mt-1.5" v-if="errors.poster">{{ errors.poster }}</span>
+      </div>
+
+      <!-- New trailer field -->
+      <div class="flex flex-col">
+        <label for="trailer" class="font-semibold mb-1.5 text-gray-700">
+          Trailer Video (Optional, max 1GB):
+        </label>
+        <input
+          type="file"
+          id="trailer"
+          @change="handleTrailerUpload"
+          accept="video/*"
+          class="p-2.5 border border-gray-300 rounded text-base focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+        />
+        <p class="text-gray-500 text-xs mt-1">Supported formats: MP4, WebM, MOV</p>
+
+        <!-- Preview trailer -->
+        <div v-if="trailerPreview" class="mt-3">
+          <p class="font-semibold mb-1.5 text-gray-700">Trailer Preview:</p>
+          <video
+            controls
+            class="w-full rounded border border-gray-300"
+            :src="trailerPreview"
+          ></video>
+        </div>
       </div>
 
       <div class="flex justify-between mt-5">

@@ -4,13 +4,14 @@ import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMoviesStore } from '@/stores/movies'
 import { useAdminStore } from '@/stores/admin'
-import { useConnectionStore } from '@/stores/connection' // Add this import
-import { localStorageService } from '@/services/localStorageService' // Add this import
+import { useConnectionStore } from '@/stores/connection'
+import { localStorageService } from '@/services/localStorageService'
+import { API_BASE_URL } from '@/config/api'
 
 const router = useRouter()
 const moviesStore = useMoviesStore()
 const adminStore = useAdminStore()
-const connectionStore = useConnectionStore() // Add this line
+const connectionStore = useConnectionStore()
 
 // Track pending operations count
 const pendingOperationsCount = ref(0)
@@ -158,7 +159,24 @@ const editedMovie = ref({
   rating: '',
   description: '',
   poster: '',
+  trailer: null,
 })
+
+// Add for handling trailer files
+const trailerFile = ref(null)
+const trailerPreview = ref(null)
+
+// Handle trailer file selection for edit form
+const handleEditTrailerUpload = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    trailerFile.value = file
+    trailerPreview.value = URL.createObjectURL(file)
+  } else {
+    trailerFile.value = null
+    trailerPreview.value = null
+  }
+}
 
 // Form validation errors
 const errors = ref({})
@@ -166,7 +184,7 @@ const errors = ref({})
 // Control showing the add movie form
 const showAddMovieForm = ref(false)
 
-// New movie object
+// New movie object with trailer
 const newMovie = ref({
   title: '',
   director: '',
@@ -176,10 +194,28 @@ const newMovie = ref({
   poster: '',
 })
 
+// For new movie trailer
+const newMovieTrailerFile = ref(null)
+const newMovieTrailerPreview = ref(null)
+
+// Handle trailer file selection for new movie form
+const handleNewTrailerUpload = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    newMovieTrailerFile.value = file
+    newMovieTrailerPreview.value = URL.createObjectURL(file)
+  } else {
+    newMovieTrailerFile.value = null
+    newMovieTrailerPreview.value = null
+  }
+}
+
 // Start editing a movie
 const startEdit = (movie) => {
   editingMovie.value = movie
   editedMovie.value = { ...movie }
+  trailerPreview.value = movie.trailer ? movie.trailer : null
+  trailerFile.value = null // Reset file input
 }
 
 // Cancel editing
@@ -192,7 +228,10 @@ const cancelEdit = () => {
     rating: '',
     description: '',
     poster: '',
+    trailer: null,
   }
+  trailerFile.value = null
+  trailerPreview.value = null
   errors.value = {}
 }
 
@@ -245,8 +284,22 @@ const isValidUrl = (url) => {
 const saveEdit = async () => {
   if (validateMovie(editedMovie.value)) {
     try {
-      // Call the API to update the movie
-      await moviesStore.updateMovieAPI(editingMovie.value.id, editedMovie.value)
+      if (trailerFile.value) {
+        // Handle with trailer upload
+        const formData = new FormData()
+        formData.append('title', editedMovie.value.title)
+        formData.append('director', editedMovie.value.director)
+        formData.append('releaseDate', editedMovie.value.releaseDate)
+        formData.append('rating', editedMovie.value.rating)
+        formData.append('description', editedMovie.value.description)
+        formData.append('poster', editedMovie.value.poster)
+        formData.append('trailer', trailerFile.value)
+
+        await moviesStore.updateMovieWithTrailer(editingMovie.value.id, formData)
+      } else {
+        // Regular update without changing trailer
+        await moviesStore.updateMovieAPI(editingMovie.value.id, editedMovie.value)
+      }
 
       // Update pending operations count
       await refreshPendingOperationsCount()
@@ -300,12 +353,26 @@ const deleteMovie = async (movie) => {
 const addMovie = async () => {
   if (validateMovie(newMovie.value)) {
     try {
-      // Convert rating to number before saving
-      const movieToAdd = {
-        ...newMovie.value,
-        rating: parseFloat(newMovie.value.rating),
+      if (newMovieTrailerFile.value) {
+        // Handle with trailer upload
+        const formData = new FormData()
+        formData.append('title', newMovie.value.title)
+        formData.append('director', newMovie.value.director)
+        formData.append('releaseDate', newMovie.value.releaseDate)
+        formData.append('rating', newMovie.value.rating)
+        formData.append('description', newMovie.value.description)
+        formData.append('poster', newMovie.value.poster)
+        formData.append('trailer', newMovieTrailerFile.value)
+
+        await moviesStore.addMovieWithTrailer(formData)
+      } else {
+        // Convert rating to number before saving
+        const movieToAdd = {
+          ...newMovie.value,
+          rating: parseFloat(newMovie.value.rating),
+        }
+        await moviesStore.addMovieAPI(movieToAdd)
       }
-      await moviesStore.addMovieAPI(movieToAdd)
 
       // Update pending operations count
       await refreshPendingOperationsCount()
@@ -351,6 +418,8 @@ const toggleAddMovieForm = () => {
       description: '',
       poster: '',
     }
+    newMovieTrailerFile.value = null
+    newMovieTrailerPreview.value = null
     errors.value = {}
   }
 }
@@ -494,6 +563,26 @@ const toggleAddMovieForm = () => {
               />
               <p v-if="errors.poster" class="text-red-500 text-sm mt-1">{{ errors.poster }}</p>
             </div>
+
+            <!-- Add trailer field -->
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-300"
+                >Trailer Video (Optional, max 1GB)</label
+              >
+              <input
+                type="file"
+                accept="video/*"
+                @change="handleNewTrailerUpload"
+                class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-green-600 rounded-md text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-green-600 file:text-white"
+              />
+              <p class="text-gray-400 text-xs mt-1">Supported formats: MP4, WebM, MOV</p>
+
+              <!-- Preview trailer -->
+              <div v-if="newMovieTrailerPreview" class="mt-3">
+                <p class="text-sm font-medium text-gray-300 mb-1">Trailer Preview:</p>
+                <video controls class="w-full rounded" :src="newMovieTrailerPreview"></video>
+              </div>
+            </div>
           </div>
 
           <div class="flex justify-end">
@@ -526,6 +615,17 @@ const toggleAddMovieForm = () => {
                   <p class="text-gray-300">Director: {{ movie.director }}</p>
                   <p class="text-gray-300">Release Date: {{ movie.releaseDate }}</p>
                   <p class="text-gray-300">Rating: {{ movie.rating }}/10</p>
+                  <p class="text-gray-300">Description: {{ movie.description }}</p>
+
+                  <!-- Show trailer if available -->
+                  <div v-if="movie.trailer" class="mt-4">
+                    <p class="text-gray-300 mb-2">Trailer:</p>
+                    <video
+                      controls
+                      class="w-full max-w-md rounded"
+                      :src="`${API_BASE_URL}${movie.trailer}`"
+                    ></video>
+                  </div>
                 </div>
               </div>
               <div class="flex gap-2">
@@ -620,6 +720,26 @@ const toggleAddMovieForm = () => {
                     :class="{ 'border-red-500': errors.poster }"
                   />
                   <p v-if="errors.poster" class="text-red-500 text-sm mt-1">{{ errors.poster }}</p>
+                </div>
+
+                <!-- Add trailer field to edit form -->
+                <div class="col-span-2">
+                  <label class="block text-sm font-medium text-gray-300"
+                    >Trailer Video (Optional, max 1GB)</label
+                  >
+                  <input
+                    type="file"
+                    accept="video/*"
+                    @change="handleEditTrailerUpload"
+                    class="mt-1 block w-full px-3 py-2 bg-slate-600 border border-red-600 rounded-md text-white file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-red-600 file:text-white"
+                  />
+                  <p class="text-gray-400 text-xs mt-1">Leave empty to keep existing trailer</p>
+
+                  <!-- Preview existing or new trailer -->
+                  <div v-if="trailerPreview" class="mt-3">
+                    <p class="text-sm font-medium text-gray-300 mb-1">Trailer Preview:</p>
+                    <video controls class="w-full rounded" :src="trailerPreview"></video>
+                  </div>
                 </div>
               </div>
 

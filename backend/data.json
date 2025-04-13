@@ -1,13 +1,185 @@
 {
   "movies": [
     {
+      "id": 1,
+      "title": "Seven Samurai",
+      "director": "Akira Kurosawa",
+      "releaseDate": "1954-04-26",
+      "rating": 8.6,
+      "description": "A poor village under attack by bandits recruits seven unemployed samurai to help them defend themselves in feudal Japan.",
+      "poster": "https://image.tmdb.org/t/p/original/8OKmBV5BUFzmozIC3pPWKHy17kx.jpg"
+    },
+    {
+      "id": 2,
+      "title": "Lawrence of Arabia",
+      "director": "David Lean",
+      "releaseDate": "1962-12-10",
+      "rating": 8.3,
+      "description": "The story of T.E. Lawrence, the English officer who successfully united and led the diverse, often warring, Arab tribes during World War I.",
+      "poster": "https://image.tmdb.org/t/p/original/5wJ2tVz5YRHXQgElJTwg1DhHXIU.jpg"
+    },
+    {
+      "id": 3,
+      "title": "Metropolis",
+      "director": "Fritz Lang",
+      "releaseDate": "1927-01-10",
+      "rating": 8.3,
+      "description": "In a futuristic city sharply divided between the working class and the city planners, the son of the city's mastermind falls in love with a working-class prophet.",
+      "poster": "https://image.tmdb.org/t/p/original/hUK9rewffKGqtXynH5SW3v9hzcu.jpg"
+    },
+    {
+      "id": 4,
+      "title": "Rashomon",
+      "director": "Akira Kurosawa",
+      "releaseDate": "1950-08-26",
+      "rating": 8.2,
+      "description": "The rape of a bride and the murder of her samurai husband are recalled from the perspectives of a bandit, the bride, the samurai's ghost and a woodcutter.",
+      "poster": "https://image.tmdb.org/t/p/original/gneKPofEHNFHSPOuLQaLeOQQvCL.jpg"
+    },
+    {
+      "id": 5,
+      "title": "The Seventh Seal",
+      "director": "Ingmar Bergman",
+      "releaseDate": "1957-02-16",
+      "rating": 8.1,
+      "description": "A knight returning to Sweden after the Crusades seeks answers about life, death, and the existence of God as he plays chess against the Grim Reaper during the Black Plague.",
+      "poster": "https://image.tmdb.org/t/p/original/wcZ21zrOsy0b52AfAF50XpTiv75.jpg"
+    },
+    {
+      "id": 6,
+      "title": "Citizen Kane",
+      "director": "Orson Welles",
+      "releaseDate": "1941-05-01",
+      "rating": 8.3,
+      "description": "Following the death of publishing tycoon Charles Foster Kane, reporters scramble to discover the meaning of his final utterance.",
+      "poster": "https://image.tmdb.org/t/p/original/sav0jxhqiH0bPr2vNFVlLf4neSv.jpg"
+    },
+    {
+      "id": 7,
+      "title": "Casablanca",
+      "director": "Michael Curtiz",
+      "releaseDate": "1942-11-26",
+      "rating": 8.5,
+      "description": "A cynical expatriate American cafe owner struggles to decide whether or not to help his former lover and her fugitive husband escape the Nazis in French Morocco.",
+      "poster": "https://image.tmdb.org/t/p/original/5K7cOHoay2mZusSLezBOY0Qxh8z.jpg"
+    },
+    {
+      "id": 8,
+      "title": "Gone with the Wind",
+      "director": "Victor Fleming",
+      "releaseDate": "1939-12-15",
+      "rating": 8.1,
+      "description": "A manipulative woman and a roguish man conduct a turbulent romance during the American Civil War and Reconstruction periods.",
+      "poster": "https://image.tmdb.org/t/p/original/lNz2Ow0wGcWizsCJYbKLqqgP3Uu.jpg"
+    },
+    {
+      "id": 9,
+      "title": "City of God",
+      "director": "Fernando Meirelles",
+      "releaseDate": "2002-05-18",
+      "rating": 8.6,
+      "description": "In the slums of Rio, two kids' paths diverge as one struggles to become a photographer and the other a kingpin.",
+      "poster": "https://image.tmdb.org/t/p/original/k7eYdWvhYQyRQoU2TB2A2Xu2TfD.jpg"
+    },
+    {
+      "id": 10,
+      "title": "Modern Times",
+      "director": "Charles Chaplin",
+      "releaseDate": "1936-02-05",
+      "rating": 8.5,
+      "description": "The Tramp struggles to live in modern industrial society with the help of a young homeless woman.",
+      "poster": "https://image.tmdb.org/t/p/original/7uoiKOEjxBBW0AgDGQWrlfGQ90w.jpg"
+    },
+    {
+      "id": 11,
+      "title": "Ran",
+      "director": "Akira Kurosawa",
+      "releaseDate": "1985-06-01",
+      "rating": 8.2,
+      "description": "In Medieval Japan, an elderly warlord retires, handing over his empire to his three sons. However, his decision to divide his land leads to tragedy.",
+      "poster": "https://image.tmdb.org/t/p/original/fR0xUXrolEcyTTMr61nYWpT7lHx.jpg"
+    },
+    {
+      "id": 12,
+      "title": "Barry Lyndon",
+      "director": "Stanley Kubrick",
+      "releaseDate": "1975-12-18",
+      "rating": 8.1,
+      "description": "An Irish rogue wins the heart of a rich widow and assumes her dead husband's aristocratic position in 18th-century England.",
+      "poster": "https://image.tmdb.org/t/p/original/iyTD4QcDemiDQkS8qnQAGrpjKw3.jpg"
+    },
+    {
+      "id": 13,
+      "title": "The Great Dictator",
+      "director": "Charles Chaplin",
+      "releaseDate": "1940-10-15",
+      "rating": 8.4,
+      "description": "Dictator Adenoid Hynkel tries to expand his empire while a poor Jewish barber tries to avoid persecution from Hynkel's regime.",
+      "poster": "https://image.tmdb.org/t/p/original/5yGcSED8DfzdUJwARQX6djXAaET.jpg"
+    },
+    {
+      "id": 14,
+      "title": "Sunset Boulevard",
+      "director": "Billy Wilder",
+      "releaseDate": "1950-08-10",
+      "rating": 8.4,
+      "description": "A screenwriter develops a dangerous relationship with a faded film star determined to make a triumphant return.",
+      "poster": "https://image.tmdb.org/t/p/original/zt8aQ6ksqK6p1AopC5zVTDS9pKT.jpg"
+    },
+    {
+      "id": 15,
+      "title": "Andrei Rublev",
+      "director": "Andrei Tarkovsky",
+      "releaseDate": "1966-12-16",
+      "rating": 8.2,
+      "description": "The life, times and hardships of 15th-century Russian icon painter Andrei Rublev.",
+      "poster": "https://image.tmdb.org/t/p/original/911VHgkyMy9nwOkoYZrI8UjPs6N.jpg"
+    },
+    {
+      "id": 16,
+      "title": "Amélie",
+      "director": "Jean-Pierre Jeunet",
+      "releaseDate": "2001-04-25",
+      "rating": 8.3,
+      "description": "Despite being caught in her imaginative world, Amelie, a young waitress, decides to help people find happiness. Her quest to spread joy leads her on a journey where she finds true love.",
+      "poster": "https://image.tmdb.org/t/p/original/fdsCPvqCI4iQ5PN1bG1CK3Vxk08.jpg"
+    },
+    {
+      "id": 17,
+      "title": "The Battleship Potemkin",
+      "director": "Sergei Eisenstein",
+      "releaseDate": "1925-12-21",
+      "rating": 8,
+      "description": "In the midst of the Russian Revolution of 1905, the crew of the battleship Potemkin mutiny against the brutal, tyrannical regime of the vessel's officers.",
+      "poster": "https://image.tmdb.org/t/p/original/ltuwX0ASJJJMz6pFzL2i2CjoJsF.jpg"
+    },
+    {
+      "id": 18,
+      "title": "Cinema Paradiso",
+      "director": "Giuseppe Tornatore",
+      "releaseDate": "1988-11-17",
+      "rating": 8.5,
+      "description": "A filmmaker recalls his childhood when falling in love with the pictures at the cinema of his home village and forms a deep friendship with the cinema's projectionist.",
+      "poster": "https://image.tmdb.org/t/p/original/8SRUfRUi6x4O68n0VCbDNRa6iGL.jpg"
+    },
+    {
+      "id": 19,
+      "title": "Spirited Away",
+      "director": "Hayao Miyazaki",
+      "releaseDate": "2001-07-20",
+      "rating": 8.6,
+      "description": "During her family's move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits, where humans are changed into beasts.",
+      "poster": "https://image.tmdb.org/t/p/original/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg"
+    },
+    {
       "id": 20,
       "title": "Gladiator",
       "director": "Ridley Scott",
       "releaseDate": "2000-05-05",
       "rating": 8.5,
       "description": "A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family and sent him into slavery.",
-      "poster": "https://image.tmdb.org/t/p/original/ehGpN04mLJIrSnxcZBMvHeG0eDc.jpg"
+      "poster": "https://image.tmdb.org/t/p/original/ehGpN04mLJIrSnxcZBMvHeG0eDc.jpg",
+      "trailer": "/uploads/1744543678335-The Man Who Almost Broke Math (And Himself...).mp4"
     },
     {
       "id": 21,
@@ -16,7 +188,8 @@
       "releaseDate": "1994-09-23",
       "rating": 9.3,
       "description": "Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.",
-      "poster": "https://image.tmdb.org/t/p/original/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg"
+      "poster": "https://image.tmdb.org/t/p/original/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",
+      "trailer": "/uploads/1744547465568-Ultimate Classic Mr. Bean Compilation ï½ Non Stop 5 Hours ï½ Mr. Bean Official [agBuBFbGZAQ].mp4"
     },
     {
       "id": 22,
@@ -278,6 +451,366 @@
       "rating": 8.5,
       "description": "A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family and sent him into slavery.",
       "poster": "https://image.tmdb.org/t/p/original/ehGpN04mLJIrSnxcZBMvHeG0eDc.jpg"
+    },
+    {
+      "id": 51,
+      "title": "When a Man Loves a Woman",
+      "director": "Tracy Adams DVM",
+      "releaseDate": "2009-06-15",
+      "rating": 7.2,
+      "description": "Deduco suggero ater arbor benevolentia theatrum uredo averto tribuo ater. Comprehendo adipiscor ambulo varietas patrocinor stella alius. Atavus thorax tersus.",
+      "poster": "https://loremflickr.com/200/300?lock=4275307479564288",
+      "trailer": null
+    },
+    {
+      "id": 52,
+      "title": "Toxic",
+      "director": "Spencer Kunde",
+      "releaseDate": "1955-11-13",
+      "rating": 2,
+      "description": "Delectatio apparatus casso una demulceo vomica cauda chirographum argumentum denego. Apparatus thorax validus cogo concido amaritudo maxime vivo cubicularis. Convoco ante verto odit vapulus volubilis cibus.",
+      "poster": "https://loremflickr.com/200/300?lock=8756292843732992",
+      "trailer": null
+    },
+    {
+      "id": 53,
+      "title": "Earth Angel",
+      "director": "Cecil Cummings",
+      "releaseDate": "2004-10-03",
+      "rating": 0.9,
+      "description": "Sumptus sono adulescens tempus abutor caritas stips admoveo taceo addo. Alienus decor varietas acquiro sordeo delectatio volo conatus talus abeo. Rerum tergiversatio capitulus adsidue eos curvo corroboro amplitudo et.",
+      "poster": "https://loremflickr.com/200/300?lock=3393107949256704",
+      "trailer": null
+    },
+    {
+      "id": 54,
+      "title": "Jessie's Girl",
+      "director": "Nina Koelpin Sr.",
+      "releaseDate": "1988-07-13",
+      "rating": 1.7,
+      "description": "Velociter amita deserunt cultellus antea stipes magnam carpo victoria curo. Consectetur tamdiu amicitia dolorum subseco desolo textilis abscido sono. Degusto tantum alienus cilicium aro tumultus.",
+      "poster": "https://loremflickr.com/200/300?lock=3993334024503296",
+      "trailer": null
+    },
+    {
+      "id": 55,
+      "title": "Greatest Love of All",
+      "director": "Dominic Koch",
+      "releaseDate": "1962-11-22",
+      "rating": 9.4,
+      "description": "Quae confero aiunt desino animadverto carpo civis cervus ago teres. Adamo earum uredo. Verto canto vae deripio demulceo.",
+      "poster": "https://picsum.photos/seed/0putbQFwB/200/300",
+      "trailer": null
+    },
+    {
+      "id": 56,
+      "title": "It's My Party",
+      "director": "Edmond Nienow",
+      "releaseDate": "1998-08-19",
+      "rating": 0.4,
+      "description": "Approbo careo volo comitatus vinco copia vix tergo calco. Vos accedo somnus curatio praesentium. Vinum debilito curis quibusdam aperte vero argumentum.",
+      "poster": "https://loremflickr.com/200/300?lock=8658182039666688",
+      "trailer": null
+    },
+    {
+      "id": 57,
+      "title": "Georgia On My Mind",
+      "director": "Lora Fadel",
+      "releaseDate": "2022-06-14",
+      "rating": 5,
+      "description": "Tametsi civitas curso. Virga celo ustilo verecundia adfero audax cilicium contra aiunt. Curtus suppono patior ocer condico vitiosus.",
+      "poster": "https://picsum.photos/seed/v3kdzu/200/300",
+      "trailer": null
+    },
+    {
+      "id": 58,
+      "title": "Mr Big Stuff",
+      "director": "Carmen Lehner",
+      "releaseDate": "1990-12-23",
+      "rating": 0.3,
+      "description": "Illo utrum architecto amplus. Voco vallum conventus vomito taceo annus cibus capto. Carcer attero itaque theologus caelum bos amitto tracto sumo.",
+      "poster": "https://picsum.photos/seed/id70Zn32c/200/300",
+      "trailer": null
+    },
+    {
+      "id": 59,
+      "title": "Kiss From a Rose",
+      "director": "Marco Bauch MD",
+      "releaseDate": "1950-01-16",
+      "rating": 7.9,
+      "description": "Error tondeo conspergo decerno valetudo theatrum pauper blandior saepe. Cado cupressus collum. Cinis canonicus adsuesco traho acerbitas caelestis asporto.",
+      "poster": "https://picsum.photos/seed/osrB8/200/300",
+      "trailer": null
+    },
+    {
+      "id": 60,
+      "title": "Wayward Wind",
+      "director": "Luis Muller",
+      "releaseDate": "1971-05-02",
+      "rating": 6.3,
+      "description": "Somniculosus administratio clarus veritas surculus circumvenio videlicet cohibeo ara. Libero ab vulgus. Ultio delibero bonus delibero tergeo.",
+      "poster": "https://picsum.photos/seed/MaGDiDOP/200/300",
+      "trailer": null
+    },
+    {
+      "id": 61,
+      "title": "There goes my baby",
+      "director": "Olive Bogisich",
+      "releaseDate": "2008-03-07",
+      "rating": 6.9,
+      "description": "Patria caritas adfero dapifer tempora ultio terebro chirographum cruentus denuo. Deduco combibo adeo. Aureus arbor credo sollicito colligo amoveo explicabo somniculosus solvo.",
+      "poster": "https://picsum.photos/seed/tlXdV/200/300",
+      "trailer": null
+    },
+    {
+      "id": 62,
+      "title": "Stormy Weather (Keeps Rainin' All the Time)",
+      "director": "Sean Muller",
+      "releaseDate": "2000-05-25",
+      "rating": 6.5,
+      "description": "Velit deficio tamdiu somniculosus delicate adipiscor tempore crastinus stabilis. Sed auctor virgo barba decipio inflammatio pauper sophismata. Vestigium acsi summopere coma adstringo.",
+      "poster": "https://picsum.photos/seed/ecr2ib2Zo/200/300",
+      "trailer": null
+    },
+    {
+      "id": 63,
+      "title": "Stagger Lee",
+      "director": "Jake Walter",
+      "releaseDate": "1956-11-26",
+      "rating": 0.6,
+      "description": "Deputo absque toties utilis vaco custodia acsi statua porro. Spiritus velut agnosco explicabo tres dignissimos amoveo. Adiuvo autem adaugeo denique crastinus cresco pauper villa comedo aperio.",
+      "poster": "https://picsum.photos/seed/l0LAP/200/300",
+      "trailer": null
+    },
+    {
+      "id": 64,
+      "title": "Winchester Cathedral",
+      "director": "Alejandro Kirlin",
+      "releaseDate": "1989-05-28",
+      "rating": 2.3,
+      "description": "Vis vos veritas caste cogo. Illo vomica ver umerus audio tres succedo dens sint venio. Ver sursum turba.",
+      "poster": "https://picsum.photos/seed/coaOePgr/200/300",
+      "trailer": null
+    },
+    {
+      "id": 65,
+      "title": "Boogie Oogie Oogie",
+      "director": "Bob Lueilwitz",
+      "releaseDate": "2019-03-20",
+      "rating": 2.7,
+      "description": "Vester caries maxime trepide speciosus studio tutis solvo valeo. Vivo abstergo astrum tergiversatio in. Cerno laboriosam bellicus spes.",
+      "poster": "https://picsum.photos/seed/RO7n7J/200/300",
+      "trailer": null
+    },
+    {
+      "id": 66,
+      "title": "Grenade",
+      "director": "Brian Stracke",
+      "releaseDate": "2002-07-03",
+      "rating": 4.7,
+      "description": "Impedit maxime cetera. Magni officiis crux stabilis ea utrimque desipio condico tener demulceo. Cetera a peior confido degero vicissitudo comptus.",
+      "poster": "https://picsum.photos/seed/jFsgRT8/200/300",
+      "trailer": null
+    },
+    {
+      "id": 67,
+      "title": "At Last",
+      "director": "Amelia Lebsack",
+      "releaseDate": "1980-06-08",
+      "rating": 3,
+      "description": "Sollers vitiosus aperte cursim acsi curia aspicio coniecto. Aperiam administratio ager laborum cado. Ago eveniet vallum.",
+      "poster": "https://loremflickr.com/200/300?lock=3060828420964352",
+      "trailer": null
+    },
+    {
+      "id": 68,
+      "title": "Can't Get Enough of Your Love",
+      "director": "Tracey Bailey",
+      "releaseDate": "2009-05-01",
+      "rating": 0.8,
+      "description": "Venustas crapula voluptatum censura defetiscor. Capio aedificium harum tamdiu vulgo vehemens vita voco cresco conventus. Ater distinctio delego amiculum corrumpo congregatio.",
+      "poster": "https://picsum.photos/seed/oSe3XL5/200/300",
+      "trailer": null
+    },
+    {
+      "id": 69,
+      "title": "YMCA",
+      "director": "Priscilla Kris",
+      "releaseDate": "1994-06-18",
+      "rating": 3.2,
+      "description": "Rerum utrimque vicissitudo explicabo curso adsum antepono tamen adnuo. Odio dignissimos damnatio vesco. Delinquo curriculum aggredior aurum cenaculum ducimus vulnus tot.",
+      "poster": "https://loremflickr.com/200/300?lock=2550015348178944",
+      "trailer": null
+    },
+    {
+      "id": 70,
+      "title": "I Think I Love You",
+      "director": "Wesley Schamberger",
+      "releaseDate": "2006-10-07",
+      "rating": 0.3,
+      "description": "Delicate uredo pariatur assentator. Ascisco aequitas averto cernuus vomito. Tricesimus tego adduco provident terebro tenetur via causa adficio.",
+      "poster": "https://loremflickr.com/200/300?lock=7083761346805760",
+      "trailer": null
+    },
+    {
+      "id": 71,
+      "title": "We Are the Champions",
+      "director": "Boyd Ryan",
+      "releaseDate": "2024-09-16",
+      "rating": 7.7,
+      "description": "Carpo cornu crepusculum ipsum video aegrus trado desolo demergo. Suppono denuo voluptate beneficium cotidie nulla. Tersus aetas aro suppono umquam vulgaris.",
+      "poster": "https://picsum.photos/seed/Z2YnmUIH/200/300",
+      "trailer": null
+    },
+    {
+      "id": 72,
+      "title": "(Let Me Be Your) Teddy Bear",
+      "director": "Tara Franey",
+      "releaseDate": "1970-03-18",
+      "rating": 1.1,
+      "description": "Hic universe aduro cognomen ea tamdiu ipsum decumbo. Synagoga aufero pariatur tabgo pecus vobis omnis deinde. Desipio addo tollo esse sunt admoneo.",
+      "poster": "https://picsum.photos/seed/lAe9VE/200/300",
+      "trailer": null
+    },
+    {
+      "id": 73,
+      "title": "Party Rock Anthem",
+      "director": "Kristin Stokes",
+      "releaseDate": "1986-11-10",
+      "rating": 3.1,
+      "description": "Substantia tendo sufficio aeneus. Adamo aspicio delinquo curto degero tersus pax. Voco vaco addo capio aduro alii depulso.",
+      "poster": "https://picsum.photos/seed/aWr8Fs6/200/300",
+      "trailer": null
+    },
+    {
+      "id": 74,
+      "title": "Like a Rolling Stone",
+      "director": "Robin Schumm",
+      "releaseDate": "1987-04-17",
+      "rating": 5.1,
+      "description": "Ultio admiratio alii supra tergo absorbeo acer. Agnitio thermae amplus dens culpa sol ducimus. Natus tamdiu cervus utroque textilis.",
+      "poster": "https://picsum.photos/seed/Xex63yK/200/300",
+      "trailer": null
+    },
+    {
+      "id": 75,
+      "title": "Rhapsody in Blue",
+      "director": "Lora Koss II",
+      "releaseDate": "1956-03-07",
+      "rating": 8.5,
+      "description": "Aurum vestrum iste alias. Comburo creptio aiunt administratio subiungo subnecto. Voluptatibus harum cervus demum sulum claro audio crinis.",
+      "poster": "https://picsum.photos/seed/w4f9M7P1d/200/300",
+      "trailer": null
+    },
+    {
+      "id": 76,
+      "title": "Help Me",
+      "director": "Mr. Ken Mayer",
+      "releaseDate": "2008-07-01",
+      "rating": 8.5,
+      "description": "Desolo cena temeritas aurum approbo torqueo capio valetudo minus. Correptius creta patria attonbitus quam villa alienus sumo deludo. Volutabrum arcesso cupiditate verto damno.",
+      "poster": "https://picsum.photos/seed/o8zLBkND/200/300",
+      "trailer": null
+    },
+    {
+      "id": 77,
+      "title": "Third Man Theme",
+      "director": "Jeremiah Leannon",
+      "releaseDate": "2021-10-19",
+      "rating": 6,
+      "description": "Deserunt adsuesco volup conduco aer laboriosam tempora tribuo eos vulgivagus. Tabernus video crudelis dedico substantia reiciendis articulus. Alias tenuis cohibeo succurro acquiro amissio.",
+      "poster": "https://loremflickr.com/200/300?lock=8811066479869952",
+      "trailer": null
+    },
+    {
+      "id": 78,
+      "title": "Love In This Club",
+      "director": "Tim Reichert",
+      "releaseDate": "1989-02-01",
+      "rating": 2.7,
+      "description": "Vetus odio confugo beatus cito cumque templum cras. Decor adflicto necessitatibus certe concido demum deprimo suffoco vulgaris agnitio. Repellendus chirographum adicio cur comedo aurum ars caries beatus.",
+      "poster": "https://loremflickr.com/200/300?lock=8147132888383488",
+      "trailer": null
+    },
+    {
+      "id": 79,
+      "title": "The Loco-Motion",
+      "director": "Terence Gottlieb",
+      "releaseDate": "2002-08-14",
+      "rating": 6.8,
+      "description": "Arma acidus tonsor aduro vapulus corrupti maiores communis varius terror. Bene pax strues curtus sulum. Verto error uberrime sophismata tenus vitae cinis.",
+      "poster": "https://picsum.photos/seed/aY6enDD8/200/300",
+      "trailer": null
+    },
+    {
+      "id": 80,
+      "title": "Hey There Delilah",
+      "director": "Jay Rempel",
+      "releaseDate": "2004-02-06",
+      "rating": 1.2,
+      "description": "Sto delinquo cupiditate enim pariatur adaugeo minus talus quis vis. Dolorem calco absque confugo adulescens quae. Reiciendis desolo aperio tutamen perspiciatis.",
+      "poster": "https://loremflickr.com/200/300?lock=6942764488982528",
+      "trailer": null
+    },
+    {
+      "id": 81,
+      "title": "My Love",
+      "director": "Carlton Kihn V",
+      "releaseDate": "1970-04-25",
+      "rating": 9.3,
+      "description": "Audacia trepide textor alioqui cursus volup delinquo studio stillicidium. Somniculosus peccatus uredo amaritudo cibus verto degusto cattus. Brevis calcar cupressus expedita adsidue conor distinctio cicuta thorax apostolus.",
+      "poster": "https://picsum.photos/seed/WAl4ytJA/200/300",
+      "trailer": null
+    },
+    {
+      "id": 82,
+      "title": "I Will Survive",
+      "director": "Loren Jacobson",
+      "releaseDate": "1965-05-08",
+      "rating": 5.4,
+      "description": "Thermae aperio aureus tutamen compono. Compello adfectus velut adhaero unde testimonium teneo sursum stultus causa. Taceo pecco deprimo crepusculum certus.",
+      "poster": "https://picsum.photos/seed/DKmop/200/300",
+      "trailer": null
+    },
+    {
+      "id": 83,
+      "title": "Stranger On the Shore",
+      "director": "Andres Cronin-Beatty",
+      "releaseDate": "2024-01-10",
+      "rating": 4.7,
+      "description": "Valetudo depereo adulatio adimpleo corrumpo constans cum expedita officia demergo. Cubitum utroque deduco spoliatio suus volubilis aiunt celebrer deprimo. Pariatur trans vapulus laboriosam cilicium contigo cognatus est quas.",
+      "poster": "https://picsum.photos/seed/1IMb1/200/300",
+      "trailer": null
+    },
+    {
+      "id": 84,
+      "title": "Private Eyes",
+      "director": "Gretchen Denesik",
+      "releaseDate": "1984-11-10",
+      "rating": 6.2,
+      "description": "Aestivus xiphias denuncio cognatus vulticulus. Urbs animus velut pecto ademptio vindico viriliter curriculum bardus. Veritatis thermae tubineus altus pariatur.",
+      "poster": "https://picsum.photos/seed/V3uj9vyKr/200/300",
+      "trailer": null
+    },
+    {
+      "id": 85,
+      "title": "The Last Dance",
+      "director": "Joe Kunde",
+      "releaseDate": "1964-06-28",
+      "rating": 10,
+      "description": "Adhaero a aeternus aequus statim beatae degero. Ea defaeco ullam sono tredecim totus aranea. Bene alter amiculum defleo textilis quam vita vester.",
+      "poster": "https://loremflickr.com/200/300?lock=8187325056024576",
+      "trailer": null
+    },
+    {
+      "id": 86,
+      "title": "Your Song",
+      "director": "Manuel Gorczany",
+      "releaseDate": "1975-05-14",
+      "rating": 8.4,
+      "description": "Statim non amoveo carcer deleniti. Supplanto vergo color ciminatio concido. Adipisci vorax corona coma aetas.",
+      "poster": "https://picsum.photos/seed/kAggrd/200/300",
+      "trailer": null
     }
   ]
 }

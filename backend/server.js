@@ -2,13 +2,43 @@ const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
 const path = require("path");
+const multer = require("multer"); // Add this for file uploads
+const { startMovieGeneration } = require("./movieGenerator");
 
 const app = express();
 const PORT = 3000;
 
+// Add state for movie generation
+let stopGeneration = null;
+let isGenerating = false;
+
+// Configure multer for trailer uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, "uploads");
+    // Create uploads directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 1073741824 }, // 1GB limit
+});
+
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "1300mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1300mb" }));
+
+// Serve static files from uploads directory
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Data file path
 const dataFilePath = path.join(__dirname, "data.json");
@@ -92,8 +122,8 @@ app.get("/movies/:id", (req, res) => {
   res.json(movie);
 });
 
-// POST new movie
-app.post("/movies", (req, res) => {
+// POST new movie with trailer
+app.post("/movies", upload.single("trailer"), (req, res) => {
   const data = readData();
   const { title, director, releaseDate, rating, description, poster } =
     req.body;
@@ -115,9 +145,10 @@ app.post("/movies", (req, res) => {
     title,
     director,
     releaseDate,
-    rating,
+    rating: parseFloat(rating),
     description,
     poster,
+    trailer: req.file ? `/uploads/${req.file.filename}` : null,
   };
 
   data.movies.push(newMovie);
@@ -126,8 +157,8 @@ app.post("/movies", (req, res) => {
   res.status(201).json(newMovie);
 });
 
-// PUT update movie
-app.put("/movies/:id", (req, res) => {
+// PUT update movie with trailer
+app.put("/movies/:id", upload.single("trailer"), (req, res) => {
   const data = readData();
   const { title, director, releaseDate, rating, description, poster } =
     req.body;
@@ -145,14 +176,20 @@ app.put("/movies/:id", (req, res) => {
     return res.status(404).json({ message: "Movie not found" });
   }
 
+  // If a new trailer file is uploaded, use it, otherwise keep the existing one
+  const trailerPath = req.file
+    ? `/uploads/${req.file.filename}`
+    : data.movies[movieIndex].trailer;
+
   data.movies[movieIndex] = {
     ...data.movies[movieIndex],
     title,
     director,
     releaseDate,
-    rating,
+    rating: parseFloat(rating),
     description,
     poster,
+    trailer: trailerPath,
   };
 
   writeData(data);
@@ -180,6 +217,31 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+// Add endpoints to control movie generation
+app.post("/movies/generation/start", (req, res) => {
+  if (!isGenerating) {
+    stopGeneration = startMovieGeneration();
+    isGenerating = true;
+    res.json({ status: "started" });
+  } else {
+    res.json({ status: "already running" });
+  }
+});
+
+app.post("/movies/generation/stop", (req, res) => {
+  if (isGenerating && stopGeneration) {
+    stopGeneration();
+    isGenerating = false;
+    res.json({ status: "stopped" });
+  } else {
+    res.json({ status: "not running" });
+  }
+});
+
+app.get("/movies/generation/status", (req, res) => {
+  res.json({ isGenerating });
+});
+
 // Only start the server if this file is run directly
 if (require.main === module) {
   const server = app.listen(PORT, "0.0.0.0", () => {
@@ -192,6 +254,11 @@ if (require.main === module) {
   // Handle graceful shutdown
   process.on("SIGTERM", () => {
     console.log("SIGTERM signal received: closing HTTP server");
+    // Stop movie generation if it's running
+    if (isGenerating && stopGeneration) {
+      stopGeneration();
+      isGenerating = false;
+    }
     server.close(() => {
       console.log("HTTP server closed");
       process.exit(0);

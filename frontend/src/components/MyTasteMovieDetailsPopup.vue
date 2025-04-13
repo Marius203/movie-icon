@@ -1,7 +1,6 @@
 <!-- javascript -->
 <script setup>
 import { computed } from 'vue'
-import { useUsersStore } from '@/stores/users'
 import { API_BASE_URL } from '@/config/api'
 
 const props = defineProps({
@@ -15,19 +14,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['close', 'steal'])
-
-const userMoviesStore = useUsersStore()
-
-// Check if movie exists in user's database
-const isMovieInUserList = computed(() => {
-  return userMoviesStore.userMovies.some(
-    (m) =>
-      m.title === props.movie.title &&
-      m.director === props.movie.director &&
-      m.releaseDate === props.movie.releaseDate,
-  )
-})
+const emit = defineEmits(['close'])
 
 // Format release date
 const formattedReleaseDate = computed(() => {
@@ -42,13 +29,6 @@ const formattedReleaseDate = computed(() => {
 const trailerUrl = computed(() => {
   return props.movie.trailer ? `${API_BASE_URL}${props.movie.trailer}` : null
 })
-
-// Handle steal button click
-const handleSteal = () => {
-  if (!isMovieInUserList.value) {
-    emit('steal', props.movie)
-  }
-}
 
 // Handle download trailer
 const downloadTrailer = () => {
@@ -159,21 +139,9 @@ const downloadTrailer = () => {
       <div class="flex justify-end gap-4 mt-6 pt-4 border-t border-yellow-600">
         <button
           @click="$emit('close')"
-          class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+          class="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
         >
-          Done
-        </button>
-        <button
-          @click="handleSteal"
-          :disabled="isMovieInUserList"
-          class="px-4 py-2 rounded transition-colors"
-          :class="
-            isMovieInUserList
-              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-              : 'bg-green-600 text-white hover:bg-green-700'
-          "
-        >
-          {{ isMovieInUserList ? 'Already Stolen' : 'Steal this' }}
+          Close
         </button>
       </div>
     </div>
