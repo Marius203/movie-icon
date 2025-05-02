@@ -5,6 +5,7 @@ const path = require("path");
 const multer = require("multer"); // Add this for file uploads
 const { startMovieGeneration } = require("./movieGenerator");
 const WebSocket = require("ws");
+const prisma = require("./prisma/client");
 
 const app = express();
 const PORT = 3000;
@@ -42,176 +43,272 @@ app.use(express.urlencoded({ extended: true, limit: "1300mb" }));
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Data file path
-const dataFilePath = path.join(__dirname, "data.json");
-
-// Helper function to read data
-const readData = () => {
-  try {
-    const data = fs.readFileSync(dataFilePath, "utf8");
-    return JSON.parse(data);
-  } catch (error) {
-    return { movies: [] };
-  }
-};
-
-// Helper function to write data
-const writeData = (data) => {
-  fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
-};
-
 // GET all movies with sorting, filtering, and pagination
-app.get("/movies", (req, res) => {
-  const data = readData();
-  let movies = [...data.movies]; // Create a copy to avoid modifying original data
+app.get("/movies", async (req, res) => {
+  try {
+    const {
+      title,
+      director,
+      sort,
+      order = "asc",
+      limit,
+      offset = 0,
+    } = req.query;
 
-  // FILTERING
-  // Filter by title (partial match)
-  if (req.query.title) {
-    const titleQuery = req.query.title.toLowerCase();
-    movies = movies.filter((movie) =>
-      movie.title.toLowerCase().includes(titleQuery)
-    );
-  }
+    // Build filter conditions
+    const whereClause = {};
 
-  // Filter by director (partial match)
-  if (req.query.director) {
-    const directorQuery = req.query.director.toLowerCase();
-    movies = movies.filter((movie) =>
-      movie.director.toLowerCase().includes(directorQuery)
-    );
-  }
+    if (title) {
+      whereClause.title = {
+        contains: title,
+        mode: "insensitive",
+      };
+    }
 
-  // SORTING
-  const sort = req.query.sort;
-  const order = req.query.order || "asc";
+    // For director filter, we need to use a relation filter
+    if (director) {
+      whereClause.director = {
+        name: {
+          contains: director,
+          mode: "insensitive",
+        },
+      };
+    }
 
-  if (sort === "title") {
-    // Sort by title (ascending or descending)
-    movies.sort((a, b) => {
-      const comparison = a.title.localeCompare(b.title);
-      return order === "desc" ? -comparison : comparison;
+    // Build ordering
+    const orderBy = [];
+    if (sort === "title") {
+      orderBy.push({ title: order.toLowerCase() });
+    } else if (sort === "rating") {
+      orderBy.push({ rating: order.toLowerCase() });
+    }
+
+    // Query with pagination
+    const parsedLimit = limit ? parseInt(limit) : undefined;
+    const parsedOffset = parseInt(offset);
+
+    const movies = await prisma.movie.findMany({
+      where: whereClause,
+      orderBy,
+      skip: parsedOffset,
+      take: parsedLimit,
+      include: {
+        director: true,
+      },
     });
-  } else if (sort === "rating") {
-    // Sort by rating (ascending or descending)
-    movies.sort((a, b) => {
-      const comparison = a.rating - b.rating;
-      return order === "desc" ? -comparison : comparison;
-    });
+
+    // Transform the response to match the expected format
+    const formattedMovies = movies.map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      director: movie.director ? movie.director.name : null,
+      releaseDate: movie.release_date
+        ? movie.release_date.toISOString().split("T")[0]
+        : null,
+      rating: movie.rating,
+      description: movie.description,
+      poster: movie.poster,
+      trailer: movie.trailer,
+    }));
+
+    res.json(formattedMovies);
+  } catch (error) {
+    console.error("Error fetching movies:", error);
+    res.status(500).json({ message: "Error fetching movies" });
   }
-
-  // PAGINATION
-  const limit = parseInt(req.query.limit) || movies.length;
-  const offset = parseInt(req.query.offset) || 0;
-
-  // Apply pagination
-  const paginatedMovies = movies.slice(offset, offset + limit);
-
-  res.json(paginatedMovies);
 });
 
 // GET single movie
-app.get("/movies/:id", (req, res) => {
-  const data = readData();
-  const movie = data.movies.find(
-    (movie) => movie.id === parseInt(req.params.id)
-  );
+app.get("/movies/:id", async (req, res) => {
+  try {
+    const movieId = parseInt(req.params.id);
 
-  if (!movie) {
-    return res.status(404).json({ message: "Movie not found" });
+    const movie = await prisma.movie.findUnique({
+      where: { id: movieId },
+      include: { director: true },
+    });
+
+    if (!movie) {
+      return res.status(404).json({ message: "Movie not found" });
+    }
+
+    // Format the response to match the expected structure
+    const formattedMovie = {
+      id: movie.id,
+      title: movie.title,
+      director: movie.director ? movie.director.name : null,
+      releaseDate: movie.release_date
+        ? movie.release_date.toISOString().split("T")[0]
+        : null,
+      rating: movie.rating,
+      description: movie.description,
+      poster: movie.poster,
+      trailer: movie.trailer,
+    };
+
+    res.json(formattedMovie);
+  } catch (error) {
+    console.error("Error fetching movie:", error);
+    res.status(500).json({ message: "Error fetching movie" });
   }
-
-  res.json(movie);
 });
 
 // POST new movie with trailer
-app.post("/movies", upload.single("trailer"), (req, res) => {
-  const data = readData();
-  const { title, director, releaseDate, rating, description, poster } =
-    req.body;
+app.post("/movies", upload.single("trailer"), async (req, res) => {
+  try {
+    const { title, director, releaseDate, rating, description, poster } =
+      req.body;
 
-  if (!title || !director || !description) {
-    return res
-      .status(400)
-      .json({ message: "Title, director and description are required" });
+    if (!title || !director || !description) {
+      return res
+        .status(400)
+        .json({ message: "Title, director and description are required" });
+    }
+
+    // Check if director exists, if not create it
+    let directorRecord = await prisma.director.findFirst({
+      where: { name: director },
+    });
+
+    if (!directorRecord) {
+      directorRecord = await prisma.director.create({
+        data: { name: director },
+      });
+    }
+
+    // Create the movie
+    const newMovie = await prisma.movie.create({
+      data: {
+        title,
+        directorId: directorRecord.id,
+        release_date: releaseDate ? new Date(releaseDate) : null,
+        rating: rating ? parseFloat(rating) : null,
+        description,
+        poster,
+        trailer: req.file ? `/uploads/${req.file.filename}` : null,
+      },
+      include: { director: true },
+    });
+
+    // Format the response to match expected structure
+    const formattedMovie = {
+      id: newMovie.id,
+      title: newMovie.title,
+      director: newMovie.director ? newMovie.director.name : null,
+      releaseDate: newMovie.release_date
+        ? newMovie.release_date.toISOString().split("T")[0]
+        : null,
+      rating: newMovie.rating,
+      description: newMovie.description,
+      poster: newMovie.poster,
+      trailer: newMovie.trailer,
+    };
+
+    res.status(201).json(formattedMovie);
+  } catch (error) {
+    console.error("Error creating movie:", error);
+    res.status(500).json({ message: "Error creating movie" });
   }
-
-  // Generate new ID (max ID + 1)
-  const maxId = data.movies.reduce(
-    (max, movie) => (movie.id > max ? movie.id : max),
-    0
-  );
-
-  const newMovie = {
-    id: maxId + 1,
-    title,
-    director,
-    releaseDate,
-    rating: parseFloat(rating),
-    description,
-    poster,
-    trailer: req.file ? `/uploads/${req.file.filename}` : null,
-  };
-
-  data.movies.push(newMovie);
-  writeData(data);
-
-  res.status(201).json(newMovie);
 });
 
 // PUT update movie with trailer
-app.put("/movies/:id", upload.single("trailer"), (req, res) => {
-  const data = readData();
-  const { title, director, releaseDate, rating, description, poster } =
-    req.body;
+app.put("/movies/:id", upload.single("trailer"), async (req, res) => {
+  try {
+    const movieId = parseInt(req.params.id);
+    const { title, director, releaseDate, rating, description, poster } =
+      req.body;
 
-  if (!title || !director || !description) {
-    return res
-      .status(400)
-      .json({ message: "Title, director and description are required" });
+    if (!title || !director || !description) {
+      return res
+        .status(400)
+        .json({ message: "Title, director and description are required" });
+    }
+
+    // Check if movie exists
+    const existingMovie = await prisma.movie.findUnique({
+      where: { id: movieId },
+    });
+
+    if (!existingMovie) {
+      return res.status(404).json({ message: "Movie not found" });
+    }
+
+    // Check if director exists, if not create it
+    let directorRecord = await prisma.director.findFirst({
+      where: { name: director },
+    });
+
+    if (!directorRecord) {
+      directorRecord = await prisma.director.create({
+        data: { name: director },
+      });
+    }
+
+    // If a new trailer file is uploaded, use it, otherwise keep the existing one
+    const trailerPath = req.file
+      ? `/uploads/${req.file.filename}`
+      : existingMovie.trailer;
+
+    // Update the movie
+    const updatedMovie = await prisma.movie.update({
+      where: { id: movieId },
+      data: {
+        title,
+        directorId: directorRecord.id,
+        release_date: releaseDate ? new Date(releaseDate) : null,
+        rating: rating ? parseFloat(rating) : null,
+        description,
+        poster,
+        trailer: trailerPath,
+      },
+      include: { director: true },
+    });
+
+    // Format the response to match expected structure
+    const formattedMovie = {
+      id: updatedMovie.id,
+      title: updatedMovie.title,
+      director: updatedMovie.director ? updatedMovie.director.name : null,
+      releaseDate: updatedMovie.release_date
+        ? updatedMovie.release_date.toISOString().split("T")[0]
+        : null,
+      rating: updatedMovie.rating,
+      description: updatedMovie.description,
+      poster: updatedMovie.poster,
+      trailer: updatedMovie.trailer,
+    };
+
+    res.json(formattedMovie);
+  } catch (error) {
+    console.error("Error updating movie:", error);
+    res.status(500).json({ message: "Error updating movie" });
   }
-
-  const movieId = parseInt(req.params.id);
-  const movieIndex = data.movies.findIndex((movie) => movie.id === movieId);
-
-  if (movieIndex === -1) {
-    return res.status(404).json({ message: "Movie not found" });
-  }
-
-  // If a new trailer file is uploaded, use it, otherwise keep the existing one
-  const trailerPath = req.file
-    ? `/uploads/${req.file.filename}`
-    : data.movies[movieIndex].trailer;
-
-  data.movies[movieIndex] = {
-    ...data.movies[movieIndex],
-    title,
-    director,
-    releaseDate,
-    rating: parseFloat(rating),
-    description,
-    poster,
-    trailer: trailerPath,
-  };
-
-  writeData(data);
-  res.json(data.movies[movieIndex]);
 });
 
 // DELETE movie
-app.delete("/movies/:id", (req, res) => {
-  const data = readData();
-  const movieId = parseInt(req.params.id);
-  const movieIndex = data.movies.findIndex((movie) => movie.id === movieId);
+app.delete("/movies/:id", async (req, res) => {
+  try {
+    const movieId = parseInt(req.params.id);
 
-  if (movieIndex === -1) {
-    return res.status(404).json({ message: "Movie not found" });
+    // Check if movie exists
+    const existingMovie = await prisma.movie.findUnique({
+      where: { id: movieId },
+    });
+
+    if (!existingMovie) {
+      return res.status(404).json({ message: "Movie not found" });
+    }
+
+    // Delete the movie
+    await prisma.movie.delete({
+      where: { id: movieId },
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting movie:", error);
+    res.status(500).json({ message: "Error deleting movie" });
   }
-
-  data.movies.splice(movieIndex, 1);
-  writeData(data);
-
-  res.status(204).send();
 });
 
 // Add health check endpoint
@@ -231,13 +328,60 @@ function createWebSocketServer(server) {
 
       if (data.type === "START_GENERATION") {
         if (!isGenerating) {
-          stopGeneration = startMovieGeneration(5000, (movie) => {
-            // Broadcast new movie to all connected clients
-            wss.clients.forEach((client) => {
-              if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ type: "NEW_MOVIE", movie }));
+          stopGeneration = startMovieGeneration(5000, async (movie) => {
+            try {
+              // First, create or find director
+              let directorRecord = await prisma.director.findFirst({
+                where: { name: movie.director },
+              });
+
+              if (!directorRecord) {
+                directorRecord = await prisma.director.create({
+                  data: { name: movie.director },
+                });
               }
-            });
+
+              // Create the movie in the database
+              const newMovie = await prisma.movie.create({
+                data: {
+                  title: movie.title,
+                  directorId: directorRecord.id,
+                  release_date: movie.releaseDate
+                    ? new Date(movie.releaseDate)
+                    : null,
+                  rating: movie.rating ? parseFloat(movie.rating) : null,
+                  description: movie.description,
+                  poster: movie.poster,
+                  trailer: movie.trailer,
+                },
+                include: { director: true },
+              });
+
+              // Format to match expected structure
+              const formattedMovie = {
+                id: newMovie.id,
+                title: newMovie.title,
+                director: newMovie.director ? newMovie.director.name : null,
+                releaseDate: newMovie.release_date
+                  ? newMovie.release_date.toISOString().split("T")[0]
+                  : null,
+                rating: newMovie.rating,
+                description: newMovie.description,
+                poster: newMovie.poster,
+                trailer: newMovie.trailer,
+              };
+
+              // Broadcast new movie to all connected clients
+              wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                  client.send(
+                    JSON.stringify({ type: "NEW_MOVIE", movie: formattedMovie })
+                  );
+                }
+              });
+            } catch (error) {
+              console.error("Error generating movie:", error);
+            }
           });
           isGenerating = true;
           ws.send(JSON.stringify({ type: "GENERATION_STARTED" }));
@@ -248,62 +392,50 @@ function createWebSocketServer(server) {
           isGenerating = false;
           ws.send(JSON.stringify({ type: "GENERATION_STOPPED" }));
         }
-      } else if (data.type === "GET_STATUS") {
-        ws.send(JSON.stringify({ type: "GENERATION_STATUS", isGenerating }));
       }
     });
-
-    ws.on("close", () => {
-      console.log("WebSocket connection closed");
-    });
   });
 }
 
-// Only start the server if this file is run directly
-if (require.main === module) {
-  const server = app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-    console.log(
-      `Server is accessible on your local network at: http://${getLocalIP()}:${PORT}`
-    );
+// Start the server
+const server = app.listen(PORT, "0.0.0.0", () => {
+  const address = server.address();
+  console.log(`Server is running on http://${getLocalIP()}:${address.port}`);
+  createWebSocketServer(server);
+});
 
-    // Create WebSocket server
-    createWebSocketServer(server);
-  });
-
-  // Handle graceful shutdown
-  process.on("SIGTERM", () => {
-    console.log("SIGTERM signal received: closing HTTP server");
-    // Stop movie generation if it's running
-    if (isGenerating && stopGeneration) {
-      stopGeneration();
-      isGenerating = false;
-    }
-    // Close WebSocket server
-    if (wss) {
-      wss.close(() => {
-        console.log("WebSocket server closed");
-      });
-    }
-    server.close(() => {
-      console.log("HTTP server closed");
-      process.exit(0);
-    });
-  });
-}
-
-// Helper function to get local IP address
 function getLocalIP() {
-  const interfaces = require("os").networkInterfaces();
-  for (const name of Object.keys(interfaces)) {
-    for (const iface of interfaces[name]) {
-      if (iface.family === "IPv4" && !iface.internal) {
-        return iface.address;
+  const { networkInterfaces } = require("os");
+  const nets = networkInterfaces();
+  const results = {};
+
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
+      if (net.family === "IPv4" && !net.internal) {
+        if (!results[name]) {
+          results[name] = [];
+        }
+        results[name].push(net.address);
       }
     }
   }
+
+  // Return the first IP found
+  for (const name of Object.keys(results)) {
+    if (results[name].length > 0) {
+      return results[name][0];
+    }
+  }
+
   return "localhost";
 }
 
-// Export the app for testing
-module.exports = app;
+// Add this for proper shutdown and cleanup
+process.on("SIGINT", async () => {
+  console.log("Shutting down gracefully");
+  await prisma.$disconnect();
+  process.exit(0);
+});
+
+module.exports = { app, server };

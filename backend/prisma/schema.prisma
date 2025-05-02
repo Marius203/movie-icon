@@ -1,0 +1,30 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Movie {
+  id           Int       @id @default(autoincrement())
+  title        String
+  director     Director? @relation(fields: [directorId], references: [id])
+  directorId   Int?
+  release_date DateTime?
+  rating       Float?
+  description  String?
+  poster       String?
+  trailer      String?
+}
+
+model Director {
+  id     Int     @id @default(autoincrement())
+  name   String  @db.VarChar(100)
+  movies Movie[]
+} 
