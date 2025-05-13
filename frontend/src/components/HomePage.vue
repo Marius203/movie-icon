@@ -98,11 +98,17 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 text-white relative p-4"
+    class="min-h-screen w-full h-screen flex flex-col items-center justify-center text-white relative p-4"
     style="
       background-image: url('https://images.unsplash.com/photo-1585252406583-b474fb5f5ade?q=80&w=2086&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
       background-size: cover;
       background-position: center;
+      background-repeat: no-repeat;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
     "
   >
     <!-- Overlay to ensure text readability over image -->

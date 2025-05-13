@@ -1,10 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import axios from 'axios'
 
 export const useUsersStore = defineStore('users', () => {
   // User authentication state
   const isLoggedIn = ref(false)
   const currentUsername = ref('')
+  const token = ref('')
+  const userId = ref(null)
 
   // User-specific movie data - starts empty
   const userMovies = ref([])
@@ -15,31 +18,97 @@ export const useUsersStore = defineStore('users', () => {
   // Movies per page option for the user's list
   const moviesPerPage = ref(5)
 
+  // API base URL
+  const API_URL = 'http://localhost:3000'
+
   // Login function
-  function login(username, password) {
-    // For demo purposes, accept any non-admin credentials
-    // In a real app, this would validate against a backend
-    if (username !== 'admin') {
-      isLoggedIn.value = true
-      currentUsername.value = username
-      localStorage.setItem('userLoggedIn', 'true')
-      return true
+  async function login(username, password) {
+    try {
+      const response = await axios.post(`${API_URL}/login`, {
+        username,
+        password
+      })
+
+      if (response.data.token) {
+        // Store token and user info
+        token.value = response.data.token
+        currentUsername.value = response.data.user.username
+        userId.value = response.data.user.id
+        isLoggedIn.value = true
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('userToken', response.data.token)
+        localStorage.setItem('userLoggedIn', 'true')
+        localStorage.setItem('username', response.data.user.username)
+        localStorage.setItem('userId', response.data.user.id)
+        
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Login error:', error)
+      return false
     }
-    return false
+  }
+
+  // Register function
+  async function register({ username, email, password }) {
+    try {
+      const response = await axios.post(`${API_URL}/register`, {
+        username,
+        email,
+        password
+      })
+      
+      return { success: true, message: response.data.message }
+    } catch (error) {
+      console.error('Registration error:', error)
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Registration failed. Please try again.' 
+      }
+    }
   }
 
   // Logout function
   function logout() {
     isLoggedIn.value = false
     currentUsername.value = ''
+    token.value = ''
+    userId.value = null
+    localStorage.removeItem('userToken')
     localStorage.removeItem('userLoggedIn')
+    localStorage.removeItem('username')
+    localStorage.removeItem('userId')
   }
 
   // Check login status
   function checkLoginStatus() {
+    const userToken = localStorage.getItem('userToken')
     const userLoggedIn = localStorage.getItem('userLoggedIn') === 'true'
-    if (userLoggedIn) {
+    const storedUsername = localStorage.getItem('username')
+    const storedUserId = localStorage.getItem('userId')
+    
+    if (userToken && userLoggedIn && storedUsername) {
+      token.value = userToken
       isLoggedIn.value = true
+      currentUsername.value = storedUsername
+      userId.value = storedUserId
+    }
+  }
+
+  // Get user profile
+  async function getUserProfile() {
+    try {
+      const response = await axios.get(`${API_URL}/user/profile`, {
+        headers: {
+          Authorization: `Bearer ${token.value}`
+        }
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+      return null
     }
   }
 
@@ -146,5 +215,9 @@ export const useUsersStore = defineStore('users', () => {
     login,
     logout,
     checkLoginStatus,
+    register,
+    getUserProfile,
+    token,
+    userId
   }
 })

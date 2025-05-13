@@ -1,75 +1,104 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MovieList from '@/components/MovieList.vue'
-import AddMovie from '@/components/AddMovie.vue'
 import LoginPage from '@/components/LoginPage.vue'
+import RegisterPage from '@/components/RegisterPage.vue'
+import AdminDashboard from '@/components/AdminDashboard.vue'
+import UserProfile from '@/components/UserProfile.vue'
+import { useUsersStore } from '@/stores/users'
+import { useAdminStore } from '@/stores/admin'
 import HomePage from '@/components/HomePage.vue'
 import MyTastePage from '@/components/MyTastePage.vue'
-import AdminDashboard from '@/components/AdminDashboard.vue'
-import { useAdminStore } from '@/stores/admin'
 
-// Helper function to check login status
-const isAuthenticated = () => {
-  return localStorage.getItem('userLoggedIn') === 'true'
-}
-
-// Helper function to check admin status
-const isAdmin = () => {
-  return localStorage.getItem('adminLoggedIn') === 'true'
-}
+const routes = [
+  {
+    path: '/',
+    redirect: '/home'
+  },
+  {
+    path: '/home',
+    name: 'home',
+    component: HomePage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginPage,
+    meta: { guest: true }
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: RegisterPage,
+    meta: { guest: true }
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: UserProfile,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/dashboard',
+    name: 'admin-dashboard',
+    component: AdminDashboard,
+    meta: { requiresAdmin: true }
+  },
+  {
+    path: '/movies',
+    name: 'movies',
+    component: MovieList,
+    meta: { requiresAuth: true }
+  },{
+    path: '/my-taste',
+    name: 'my-taste',
+    component: MyTastePage,
+    meta: { requiresAuth: true }
+  }
+]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      redirect: '/login',
-    },
-    {
-      path: '/home',
-      name: 'home',
-      component: HomePage,
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/movies',
-      name: 'movies',
-      component: MovieList,
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/my-taste',
-      name: 'my-taste',
-      component: MyTastePage,
-      meta: { requiresAuth: true },
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: LoginPage,
-    },
-    {
-      path: '/admin/dashboard',
-      name: 'admin-dashboard',
-      component: AdminDashboard,
-      meta: { requiresAdmin: true },
-    },
-  ],
+  history: createWebHistory(),
+  routes
 })
 
-// Navigation guard for authentication
+// Navigation guard to check authentication
 router.beforeEach((to, from, next) => {
-  // Allow access to login page
-  if (to.path === '/login') {
-    next()
-    return
+  const usersStore = useUsersStore()
+  const adminStore = useAdminStore()
+  
+  // Check if user is logged in
+  const isLoggedIn = usersStore.isLoggedIn
+  const isAdmin = adminStore.isAdmin
+  
+  // Check if route requires authentication
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (!isLoggedIn) {
+      // Redirect to login if not authenticated
+      next({ name: 'login' })
+    } else {
+      next()
+    }
+  } 
+  // Check if route requires admin access
+  else if (to.matched.some(record => record.meta.requiresAdmin)) {
+    if (!isAdmin) {
+      // Redirect to home if not admin
+      next({ name: 'home' })
+    } else {
+      next()
+    }
   }
-
-  // Check authentication for protected routes
-  if (to.meta.requiresAuth && !isAuthenticated()) {
-    next('/login')
-  } else if (to.meta.requiresAdmin && !isAdmin()) {
-    next('/login')
-  } else {
+  // Check if route is for guests only (login, register)
+  else if (to.matched.some(record => record.meta.guest)) {
+    if (isLoggedIn) {
+      // Redirect to home if already logged in
+      next({ name: 'home' })
+    } else {
+      next()
+    }
+  }
+  else {
     next()
   }
 })

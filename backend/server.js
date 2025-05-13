@@ -6,9 +6,12 @@ const multer = require("multer"); // Add this for file uploads
 const { startMovieGeneration } = require("./movieGenerator");
 const WebSocket = require("ws");
 const prisma = require("./prisma/client");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 const PORT = 3000;
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret"; // In production, use environment variable
 
 // Add state for movie generation
 let stopGeneration = null;
@@ -311,6 +314,178 @@ app.delete("/movies/:id", async (req, res) => {
   }
 });
 
+// POST new user registration
+app.post('/register', async (req, res) => {
+  try {
+    console.log('Registration request body:', req.body);
+    const { username, email, password } = req.body;
+
+    // Ensure username, email, and password are strings
+    const usernameStr = String(username);
+    const emailStr = String(email);
+    const passwordStr = String(password);
+
+    console.log('Processed registration data:', { usernameStr, emailStr, passwordStr });
+
+    // Build OR array only with defined values
+    const orArray = [];
+    if (usernameStr) orArray.push({ username: usernameStr });
+    if (emailStr) orArray.push({ email: emailStr });
+
+    // Check if user already exists
+    const existingUser = await prisma.Users.findFirst({
+      where: {
+        OR: orArray
+      },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'Username or email already exists' });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(passwordStr, 10);
+
+    // Create new user
+    const newUser = await prisma.Users.create({
+      data: {
+        username: usernameStr,
+        email: emailStr,
+        password: hashedPassword, // Store hashed password
+        isAdmin: false,
+      },
+    });
+
+    // Don't send the password back in the response
+    const { password: _, ...userWithoutPassword } = newUser;
+    
+    res.status(201).json({ 
+      message: 'User registered successfully', 
+      user: userWithoutPassword 
+    });
+  } catch (error) {
+    console.error('Error registering user:', error);
+    res.status(500).json({ message: 'Error registering user' });
+  }
+});
+
+// POST user login
+app.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Find the user by username
+    const user = await prisma.Users.findFirst({
+      where: { username },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid username or password' });
+    }
+
+    // Compare the provided password with the hashed password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'Invalid username or password' });
+    }
+
+    // Generate a JWT token
+    const token = jwt.sign(
+      { 
+        userId: user.id,
+        username: user.username,
+        isAdmin: user.isAdmin
+      }, 
+      JWT_SECRET, 
+      { expiresIn: '24h' }
+    );
+
+    // Don't send the password back in the response
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.json({ 
+      message: 'Login successful', 
+      user: userWithoutPassword,
+      token 
+    });
+  } catch (error) {
+    console.error('Error logging in:', error);
+    res.status(500).json({ message: 'Error logging in' });
+  }
+});
+
+// Middleware to verify JWT token
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN format
+
+  if (!token) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// User profile endpoint
+app.get('/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id
+    
+    // Get user data from database
+    const user = await prisma.Users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        createdAt: true,
+        isAdmin: true,
+        // Include user's movies if needed
+        movies: {
+          select: {
+            id: true,
+            movie: {
+              select: {
+                id: true,
+                title: true,
+                release_date: true,
+                rating: true
+              }
+            }
+          }
+        }
+      }
+    })
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+    
+    // Format the movies data
+    const formattedUser = {
+      ...user,
+      movies: user.movies.map(um => ({
+        id: um.movie.id,
+        title: um.movie.title,
+        year: um.movie.release_date ? new Date(um.movie.release_date).getFullYear() : null,
+        rating: um.movie.rating
+      }))
+    }
+    
+    res.json(formattedUser)
+  } catch (error) {
+    console.error('Error fetching user profile:', error)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // Add health check endpoint
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
@@ -437,5 +612,154 @@ process.on("SIGINT", async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
+
+// Add movie to user's list
+app.post('/user/movies', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id
+    const { movieId, rating } = req.body
+    
+    if (!movieId) {
+      return res.status(400).json({ message: 'Movie ID is required' })
+    }
+    
+    // Check if movie exists
+    const movie = await prisma.movies.findUnique({
+      where: { id: movieId }
+    })
+    
+    if (!movie) {
+      return res.status(404).json({ message: 'Movie not found' })
+    }
+    
+    // Check if user already has this movie
+    const existingUserMovie = await prisma.userMovies.findFirst({
+      where: {
+        userId: userId,
+        movieId: movieId
+      }
+    })
+    
+    if (existingUserMovie) {
+      return res.status(400).json({ message: 'Movie already in your list' })
+    }
+    
+    // Add movie to user's list
+    const userMovie = await prisma.userMovies.create({
+      data: {
+        userId: userId,
+        movieId: movieId,
+        rating: rating || null
+      }
+    })
+    
+    res.status(201).json(userMovie)
+  } catch (error) {
+    console.error('Error adding movie to user list:', error)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
+// Update movie rating
+app.put('/user/movies/:movieId', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id
+    const { movieId } = req.params
+    const { rating } = req.body
+    
+    if (!rating) {
+      return res.status(400).json({ message: 'Rating is required' })
+    }
+    
+    // Check if user has this movie
+    const userMovie = await prisma.userMovies.findFirst({
+      where: {
+        userId: userId,
+        movieId: movieId
+      }
+    })
+    
+    if (!userMovie) {
+      return res.status(404).json({ message: 'Movie not found in your list' })
+    }
+    
+    // Update rating
+    const updatedUserMovie = await prisma.userMovies.update({
+      where: {
+        id: userMovie.id
+      },
+      data: {
+        rating: rating
+      }
+    })
+    
+    res.json(updatedUserMovie)
+  } catch (error) {
+    console.error('Error updating movie rating:', error)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
+// Remove movie from user's list
+app.delete('/user/movies/:movieId', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id
+    const { movieId } = req.params
+    
+    // Check if user has this movie
+    const userMovie = await prisma.userMovies.findFirst({
+      where: {
+        userId: userId,
+        movieId: movieId
+      }
+    })
+    
+    if (!userMovie) {
+      return res.status(404).json({ message: 'Movie not found in your list' })
+    }
+    
+    // Remove movie from user's list
+    await prisma.userMovies.delete({
+      where: {
+        id: userMovie.id
+      }
+    })
+    
+    res.status(204).send()
+  } catch (error) {
+    console.error('Error removing movie from user list:', error)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
+// Get user's movies
+app.get('/user/movies', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id
+    
+    // Get user's movies
+    const userMovies = await prisma.userMovies.findMany({
+      where: {
+        userId: userId
+      },
+      include: {
+        movie: true
+      }
+    })
+    
+    // Format response
+    const movies = userMovies.map(um => ({
+      id: um.movie.id,
+      title: um.movie.title,
+      year: um.movie.year,
+      rating: um.rating
+    }))
+    
+    res.json(movies)
+  } catch (error) {
+    console.error('Error fetching user movies:', error)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
 
 module.exports = { app, server };
