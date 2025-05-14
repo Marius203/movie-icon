@@ -1,5 +1,6 @@
 <script setup>
 import ConnectionStatus from '@/components/ConnectionStatus.vue'
+import LogoutButton from '@/components/LogoutButton.vue'
 import { onMounted } from 'vue'
 import { useUsersStore } from '@/stores/users'
 import { useAdminStore } from '@/stores/admin'
@@ -20,5 +21,6 @@ onMounted(() => {
     <main class="container mx-auto px-4 py-8">
       <router-view />
     </main>
+    <LogoutButton />
   </div>
 </template>

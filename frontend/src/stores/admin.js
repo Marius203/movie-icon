@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
-
-const API_URL = 'http://localhost:3000'
+import { API_BASE_URL } from '@/config/api'
 
 export const useAdminStore = defineStore('admin', () => {
   // Admin authentication state
@@ -13,18 +12,22 @@ export const useAdminStore = defineStore('admin', () => {
   // Login function that checks if the credentials are for admin or regular user
   async function login(username, password) {
     try {
-      // Check if it's an admin login
-      if (username === 'admin' && password === 'admin123') {
-        // In a real app, this would be handled by the backend
-        // For now, we'll simulate a successful admin login
+      // Use the backend login endpoint
+      const response = await axios.post(`${API_BASE_URL}/login`, {
+        username,
+        password
+      })
+
+      // Check if the user is an admin
+      if (response.data.user && response.data.user.isAdmin) {
         isAdmin.value = true
-        adminUsername.value = username
-        adminToken.value = 'admin-token-' + Date.now() // Simulated token
+        adminUsername.value = response.data.user.username
+        adminToken.value = response.data.token
         
         // Store admin info in localStorage
         localStorage.setItem('adminLoggedIn', 'true')
         localStorage.setItem('adminToken', adminToken.value)
-        localStorage.setItem('adminUsername', username)
+        localStorage.setItem('adminUsername', response.data.user.username)
         
         return { success: true, isAdmin: true }
       }

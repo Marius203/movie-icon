@@ -428,6 +428,8 @@ const authenticateToken = (req, res, next) => {
     if (err) {
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
+    // Ensure req.user.id is always set
+    if (user.userId && !user.id) user.id = user.userId;
     req.user = user;
     next();
   });
@@ -617,26 +619,56 @@ process.on("SIGINT", async () => {
 app.post('/user/movies', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id
-    const { movieId, rating } = req.body
+    const { movieId, rating, movie } = req.body
     
-    if (!movieId) {
-      return res.status(400).json({ message: 'Movie ID is required' })
+    if (!movieId && !movie) {
+      return res.status(400).json({ message: 'Movie ID or movie data is required' })
     }
     
-    // Check if movie exists
-    const movie = await prisma.movies.findUnique({
-      where: { id: movieId }
-    })
+    let movieRecord
     
-    if (!movie) {
-      return res.status(404).json({ message: 'Movie not found' })
+    // If movieId is provided, find the movie
+    if (movieId) {
+      movieRecord = await prisma.movie.findUnique({
+        where: { id: movieId }
+      })
+      
+      if (!movieRecord) {
+        return res.status(404).json({ message: 'Movie not found' })
+      }
+    } 
+    // If movie data is provided, create the movie
+    else if (movie) {
+      // Check if director exists, if not create it
+      let directorRecord = await prisma.director.findFirst({
+        where: { name: movie.director }
+      })
+      
+      if (!directorRecord) {
+        directorRecord = await prisma.director.create({
+          data: { name: movie.director }
+        })
+      }
+      
+      // Create the movie
+      movieRecord = await prisma.movie.create({
+        data: {
+          title: movie.title,
+          directorId: directorRecord.id,
+          release_date: movie.releaseDate ? new Date(movie.releaseDate) : null,
+          rating: movie.rating ? parseFloat(movie.rating) : null,
+          description: movie.description || '',
+          poster: movie.poster || null,
+          trailer: movie.trailer || null
+        }
+      })
     }
     
     // Check if user already has this movie
-    const existingUserMovie = await prisma.userMovies.findFirst({
+    const existingUserMovie = await prisma.userMovie.findFirst({
       where: {
         userId: userId,
-        movieId: movieId
+        movieId: movieRecord.id
       }
     })
     
@@ -645,10 +677,10 @@ app.post('/user/movies', authenticateToken, async (req, res) => {
     }
     
     // Add movie to user's list
-    const userMovie = await prisma.userMovies.create({
+    const userMovie = await prisma.userMovie.create({
       data: {
         userId: userId,
-        movieId: movieId,
+        movieId: movieRecord.id,
         rating: rating || null
       }
     })
@@ -672,7 +704,7 @@ app.put('/user/movies/:movieId', authenticateToken, async (req, res) => {
     }
     
     // Check if user has this movie
-    const userMovie = await prisma.userMovies.findFirst({
+    const userMovie = await prisma.userMovie.findFirst({
       where: {
         userId: userId,
         movieId: movieId
@@ -684,7 +716,7 @@ app.put('/user/movies/:movieId', authenticateToken, async (req, res) => {
     }
     
     // Update rating
-    const updatedUserMovie = await prisma.userMovies.update({
+    const updatedUserMovie = await prisma.userMovie.update({
       where: {
         id: userMovie.id
       },
@@ -707,7 +739,7 @@ app.delete('/user/movies/:movieId', authenticateToken, async (req, res) => {
     const { movieId } = req.params
     
     // Check if user has this movie
-    const userMovie = await prisma.userMovies.findFirst({
+    const userMovie = await prisma.userMovie.findFirst({
       where: {
         userId: userId,
         movieId: movieId
@@ -719,7 +751,7 @@ app.delete('/user/movies/:movieId', authenticateToken, async (req, res) => {
     }
     
     // Remove movie from user's list
-    await prisma.userMovies.delete({
+    await prisma.userMovie.delete({
       where: {
         id: userMovie.id
       }
@@ -738,7 +770,7 @@ app.get('/user/movies', authenticateToken, async (req, res) => {
     const userId = req.user.id
     
     // Get user's movies
-    const userMovies = await prisma.userMovies.findMany({
+    const userMovies = await prisma.userMovie.findMany({
       where: {
         userId: userId
       },
@@ -751,8 +783,11 @@ app.get('/user/movies', authenticateToken, async (req, res) => {
     const movies = userMovies.map(um => ({
       id: um.movie.id,
       title: um.movie.title,
-      year: um.movie.year,
-      rating: um.rating
+      director: um.movie.director ? um.movie.director.name : null,
+      releaseDate: um.movie.release_date ? um.movie.release_date.toISOString().split('T')[0] : null,
+      rating: um.rating || um.movie.rating,
+      description: um.movie.description,
+      poster: um.movie.poster
     }))
     
     res.json(movies)

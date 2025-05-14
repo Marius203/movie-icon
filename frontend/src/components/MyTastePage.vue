@@ -15,24 +15,26 @@ let generationInterval = null
 const isGenerating = ref(false)
 
 // Initialize worker (if kept)
-onMounted(() => {
+onMounted(async () => {
+  // Fetch user's movies from the server
+  await userMoviesStore.fetchUserMovies()
+  
   movieWorker = new Worker(new URL('../workers/movieGenerator.js', import.meta.url), {
     type: 'module',
   })
 
-  movieWorker.onmessage = (event) => {
+  movieWorker.onmessage = async (event) => {
     if (event.data.type === 'MOVIES_GENERATED') {
       // Add generated movies specifically to the user's list in the future
-      event.data.movies.forEach((movie) => {
-        // moviesStore.addMovie(movie) // Modify this later
-        userMoviesStore.addMovie(movie) // Add to user store
-      })
+      for (const movie of event.data.movies) {
+        await userMoviesStore.addMovie(movie) // Add to user store
+      }
     }
   }
 })
 
 // Toggle generation (if kept)
-const toggleGeneration = () => {
+const toggleGeneration = async () => {
   if (isGenerating.value) {
     if (generationInterval) {
       clearInterval(generationInterval)
@@ -40,7 +42,7 @@ const toggleGeneration = () => {
     }
     isGenerating.value = false
   } else {
-    generationInterval = setInterval(() => {
+    generationInterval = setInterval(async () => {
       movieWorker.postMessage({ type: 'GENERATE_MOVIES', count: 1 })
     }, 50)
     isGenerating.value = true
@@ -113,25 +115,35 @@ const startEditRating = (index, currentRating) => {
   newRating.value = currentRating
 }
 
-const updateRating = (index) => {
+// Handle rating change
+const handleRatingChange = async (index, newRating) => {
   if (newRating.value >= 0 && newRating.value <= 10) {
     const actualIndex = (currentPage.value - 1) * userMoviesStore.moviesPerPage + index
-    // moviesStore.updateMovieRating(actualIndex, parseFloat(newRating.value)) // Modify later for user data
-    userMoviesStore.updateMovieRating(actualIndex, parseFloat(newRating.value)) // Use user store action
-    editingRating.value = null
+    const success = await userMoviesStore.updateMovieRating(actualIndex, parseFloat(newRating.value))
+    
+    if (success) {
+      editingRating.value = null
+    } else {
+      alert('Failed to update rating. Please try again.')
+    }
   } else {
     alert('Rating must be between 0 and 10')
   }
 }
 
-// Remove Movie (Keep this functionality)
-const removeMovie = (index) => {
+// Handle movie removal
+const handleRemoveMovie = async (index) => {
   if (confirm('Are you sure you want to remove this movie from your list?')) {
     const actualIndex = (currentPage.value - 1) * userMoviesStore.moviesPerPage + index
-    // moviesStore.removeMovie(actualIndex) // Modify later for user data
-    userMoviesStore.removeMovie(actualIndex) // Use user store action
-    if (currentPage.value > 1 && paginatedMovies.value.length === 0) {
-      currentPage.value--
+    const success = await userMoviesStore.removeMovie(actualIndex)
+    
+    if (success) {
+      // Adjust pagination if needed
+      if (currentPage.value > 1 && paginatedMovies.value.length === 0) {
+        currentPage.value--
+      }
+    } else {
+      alert('Failed to remove movie. Please try again.')
     }
   }
 }
@@ -311,7 +323,7 @@ const closeDetails = () => {
             </button>
             <!-- Remove button -->
             <button
-              @click.stop="removeMovie(index)"
+              @click.stop="handleRemoveMovie(index)"
               class="text-red-400 hover:text-red-300 text-xs px-2 py-1 border border-red-400 rounded hover:bg-red-400 hover:text-white transition duration-150"
             >
               Remove
@@ -350,7 +362,7 @@ const closeDetails = () => {
                 class="bg-gray-700 text-white rounded p-1 w-20 border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
               <button
-                @click="updateRating(index)"
+                @click="handleRatingChange(index, newRating)"
                 class="bg-green-600 text-white px-2 py-1 rounded text-xs font-semibold hover:bg-green-700 transition duration-150"
               >
                 Save

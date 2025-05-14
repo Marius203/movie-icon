@@ -12,7 +12,9 @@ import MyTastePage from '@/components/MyTastePage.vue'
 const routes = [
   {
     path: '/',
-    redirect: '/home'
+    redirect: '/login',
+    component: LoginPage,
+    meta: { guest: true }
   },
   {
     path: '/home',

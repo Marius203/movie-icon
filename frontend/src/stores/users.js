@@ -42,6 +42,9 @@ export const useUsersStore = defineStore('users', () => {
         localStorage.setItem('username', response.data.user.username)
         localStorage.setItem('userId', response.data.user.id)
         
+        // Fetch user's movies after login
+        await fetchUserMovies()
+        
         return true
       }
       return false
@@ -76,6 +79,7 @@ export const useUsersStore = defineStore('users', () => {
     currentUsername.value = ''
     token.value = ''
     userId.value = null
+    userMovies.value = [] // Clear user movies
     localStorage.removeItem('userToken')
     localStorage.removeItem('userLoggedIn')
     localStorage.removeItem('username')
@@ -94,6 +98,9 @@ export const useUsersStore = defineStore('users', () => {
       isLoggedIn.value = true
       currentUsername.value = storedUsername
       userId.value = storedUserId
+      
+      // Fetch user's movies if logged in
+      fetchUserMovies()
     }
   }
 
@@ -109,6 +116,24 @@ export const useUsersStore = defineStore('users', () => {
     } catch (error) {
       console.error('Error fetching user profile:', error)
       return null
+    }
+  }
+
+  // Fetch user's movies from the server
+  async function fetchUserMovies() {
+    if (!isLoggedIn.value || !token.value) return
+    
+    try {
+      const response = await axios.get(`${API_URL}/user/movies`, {
+        headers: {
+          Authorization: `Bearer ${token.value}`
+        }
+      })
+      
+      // Update the user's movies in the store
+      userMovies.value = response.data
+    } catch (error) {
+      console.error('Error fetching user movies:', error)
     }
   }
 
@@ -156,46 +181,136 @@ export const useUsersStore = defineStore('users', () => {
   }
 
   // Add new movie to the user's list
-  function addMovie(movie) {
-    // Optional: Add check to prevent duplicates if needed
-    userMovies.value.push(movie)
+  async function addMovie(movie) {
+    if (!isLoggedIn.value || !token.value) {
+      console.error('Cannot add movie: User not logged in')
+      return false
+    }
+    
+    try {
+      // Add movie to the database
+      const response = await axios.post(
+        `${API_URL}/user/movies`,
+        {
+          movieId: movie.id || null,
+          rating: movie.rating || null,
+          movie: movie.id ? null : {
+            title: movie.title,
+            director: movie.director,
+            releaseDate: movie.releaseDate,
+            rating: movie.rating,
+            description: movie.description,
+            poster: movie.poster,
+            trailer: movie.trailer
+          }
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token.value}`
+          }
+        }
+      )
+      
+      // Add to local state
+      userMovies.value.push(movie)
+      
+      return true
+    } catch (error) {
+      console.error('Error adding movie to user list:', error)
+      
+      // If the error is that the movie is already in the list, add it to local state anyway
+      if (error.response && error.response.status === 400 && 
+          error.response.data.message === 'Movie already in your list') {
+        userMovies.value.push(movie)
+        return true
+      }
+      
+      return false
+    }
   }
 
   // Remove movie from the user's list
-  function removeMovie(index) {
+  async function removeMovie(index) {
+    if (!isLoggedIn.value || !token.value) {
+      console.error('Cannot remove movie: User not logged in')
+      return false
+    }
+    
     // Use the sorted index directly since we are operating on the user's potentially sorted list
     if (index >= 0 && index < sortedMovies.value.length) {
       const movieToRemove = sortedMovies.value[index]
-      const originalIndex = userMovies.value.findIndex(
-        (m) =>
-          m.title === movieToRemove.title &&
-          m.director === movieToRemove.director &&
-          m.releaseDate === movieToRemove.releaseDate,
-      )
-      if (originalIndex !== -1) {
-        userMovies.value.splice(originalIndex, 1)
+      
+      try {
+        // Remove from the database
+        await axios.delete(
+          `${API_URL}/user/movies/${movieToRemove.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token.value}`
+            }
+          }
+        )
+        
+        // Remove from local state
+        const originalIndex = userMovies.value.findIndex(
+          (m) => m.id === movieToRemove.id
+        )
+        
+        if (originalIndex !== -1) {
+          userMovies.value.splice(originalIndex, 1)
+        }
+        
+        return true
+      } catch (error) {
+        console.error('Error removing movie from user list:', error)
+        return false
       }
     } else {
       console.error('Error removing movie: Invalid index', index)
+      return false
     }
   }
 
   // Update movie rating in the user's list
-  function updateMovieRating(index, rating) {
+  async function updateMovieRating(index, rating) {
+    if (!isLoggedIn.value || !token.value) {
+      console.error('Cannot update rating: User not logged in')
+      return false
+    }
+    
     // Use the sorted index directly
     if (index >= 0 && index < sortedMovies.value.length) {
       const movieToUpdate = sortedMovies.value[index]
-      const originalIndex = userMovies.value.findIndex(
-        (m) =>
-          m.title === movieToUpdate.title &&
-          m.director === movieToUpdate.director &&
-          m.releaseDate === movieToUpdate.releaseDate,
-      )
-      if (originalIndex !== -1) {
-        userMovies.value[originalIndex].rating = rating
+      
+      try {
+        // Update in the database
+        await axios.put(
+          `${API_URL}/user/movies/${movieToUpdate.id}`,
+          { rating },
+          {
+            headers: {
+              Authorization: `Bearer ${token.value}`
+            }
+          }
+        )
+        
+        // Update in local state
+        const originalIndex = userMovies.value.findIndex(
+          (m) => m.id === movieToUpdate.id
+        )
+        
+        if (originalIndex !== -1) {
+          userMovies.value[originalIndex].rating = rating
+        }
+        
+        return true
+      } catch (error) {
+        console.error('Error updating movie rating:', error)
+        return false
       }
     } else {
       console.error('Error updating rating: Invalid index', index)
+      return false
     }
   }
 
@@ -217,6 +332,7 @@ export const useUsersStore = defineStore('users', () => {
     checkLoginStatus,
     register,
     getUserProfile,
+    fetchUserMovies,
     token,
     userId
   }

@@ -197,7 +197,7 @@ const handlePopupClose = () => {
 }
 
 // Handle steal movie
-const handleStealMovie = (movie) => {
+const handleStealMovie = async (movie) => {
   // Check if the movie already exists in the user's list
   const exists = userMoviesStore.userMovies.some(
     (m) =>
@@ -213,9 +213,14 @@ const handleStealMovie = (movie) => {
 
   // Add a deep copy of the movie object to avoid reactivity issues
   const movieCopy = JSON.parse(JSON.stringify(movie))
-  userMoviesStore.addMovie(movieCopy)
-  alert(`${movie.title} 'stolen' and added to your personal list!`)
-  handlePopupClose()
+  const success = await userMoviesStore.addMovie(movieCopy)
+  
+  if (success) {
+    alert(`${movie.title} 'stolen' and added to your personal list!`)
+    handlePopupClose()
+  } else {
+    alert(`Failed to add ${movie.title} to your personal list. Please try again.`)
+  }
 }
 </script>
 

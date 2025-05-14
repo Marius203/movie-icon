@@ -47,6 +47,7 @@ model UserMovie {
   userId    Int
   movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
   movieId   Int
+  rating    Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
