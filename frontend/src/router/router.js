@@ -69,8 +69,8 @@ router.beforeEach((to, from, next) => {
   const usersStore = useUsersStore()
   const adminStore = useAdminStore()
   
-  // Check if user is logged in
-  const isLoggedIn = usersStore.isLoggedIn
+  // Check if user is logged in (either as regular user or admin)
+  const isLoggedIn = usersStore.isLoggedIn || adminStore.isAdmin
   const isAdmin = adminStore.isAdmin
   
   // Check if route requires authentication

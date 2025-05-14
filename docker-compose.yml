@@ -12,9 +12,13 @@ services:
       - DATABASE_URL=postgresql://postgres:Suiram4oo2!@host.docker.internal:5432/MovieIcon?schema=public
     volumes:
       - backend-data:/app/uploads
+      - ./backend:/app
+      - /app/node_modules
     depends_on:
       - postgres
     restart: unless-stopped
+    networks:
+      - movie-icon-network
 
   frontend:
     build:
@@ -22,9 +26,16 @@ services:
       dockerfile: Dockerfile
     ports:
       - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
     restart: unless-stopped
+    networks:
+      - movie-icon-network
 
   postgres:
     image: postgres:14
@@ -37,7 +48,13 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
+    networks:
+      - movie-icon-network
 
 volumes:
   backend-data:
-  postgres-data: 
+  postgres-data:
+
+networks:
+  movie-icon-network:
+    driver: bridge 

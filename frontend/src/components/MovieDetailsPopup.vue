@@ -19,14 +19,19 @@ const emit = defineEmits(['close', 'steal'])
 
 const userMoviesStore = useUsersStore()
 
-// Check if movie exists in user's database
-const isMovieInUserList = computed(() => {
+// Function to check if a movie is in the user's list
+const isMovieInUserList = (movie) => {
   return userMoviesStore.userMovies.some(
     (m) =>
-      m.title === props.movie.title &&
-      m.director === props.movie.director &&
-      m.releaseDate === props.movie.releaseDate,
+      m.title === movie.title &&
+      m.director === movie.director &&
+      m.releaseDate === movie.releaseDate
   )
+}
+
+// Check if movie exists in user's database
+const isMovieInUserListComputed = computed(() => {
+  return isMovieInUserList(props.movie)
 })
 
 // Format release date
@@ -45,7 +50,7 @@ const trailerUrl = computed(() => {
 
 // Handle steal button click
 const handleSteal = () => {
-  if (!isMovieInUserList.value) {
+  if (!isMovieInUserListComputed.value) {
     emit('steal', props.movie)
   }
 }
@@ -165,15 +170,15 @@ const downloadTrailer = () => {
         </button>
         <button
           @click="handleSteal"
-          :disabled="isMovieInUserList"
+          :disabled="isMovieInUserListComputed"
           class="px-4 py-2 rounded transition-colors"
           :class="
-            isMovieInUserList
+            isMovieInUserListComputed
               ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
               : 'bg-green-600 text-white hover:bg-green-700'
           "
         >
-          {{ isMovieInUserList ? 'Already Stolen' : 'Steal this' }}
+          {{ isMovieInUserListComputed ? 'Already Stolen' : 'Steal this' }}
         </button>
       </div>
     </div>

@@ -80,9 +80,27 @@ const toggleMovieGeneration = () => {
   }
 }
 
+// Function to check if a movie is in the user's list
+const isMovieInUserList = (movie) => {
+  return userMoviesStore.userMovies.some(
+    (m) =>
+      m.title === movie.title &&
+      m.director === movie.director &&
+      m.releaseDate === movie.releaseDate
+  )
+}
+
 // Load initial movies and connect WebSocket
 onMounted(async () => {
   loading.value = true
+  
+  // First, ensure user's movies are loaded
+  if (userMoviesStore.isLoggedIn) {
+    console.log('Fetching user movies on MovieList mount')
+    await userMoviesStore.fetchUserMovies()
+  }
+  
+  // Then fetch movies from the database
   await moviesStore.fetchMovies(limit.value, offset.value)
   displayedMovies.value = [...moviesStore.sortedMovies]
   loading.value = false
@@ -199,14 +217,7 @@ const handlePopupClose = () => {
 // Handle steal movie
 const handleStealMovie = async (movie) => {
   // Check if the movie already exists in the user's list
-  const exists = userMoviesStore.userMovies.some(
-    (m) =>
-      m.title === movie.title &&
-      m.director === movie.director &&
-      m.releaseDate === movie.releaseDate,
-  )
-
-  if (exists) {
+  if (isMovieInUserList(movie)) {
     alert(`${movie.title} is already in your personal list.`)
     return
   }
@@ -302,36 +313,15 @@ const handleStealMovie = async (movie) => {
 
           <button
             @click.stop="handleStealMovie(movie)"
-            :disabled="
-              userMoviesStore.userMovies.some(
-                (m) =>
-                  m.title === movie.title &&
-                  m.director === movie.director &&
-                  m.releaseDate === movie.releaseDate,
-              )
-            "
+            :disabled="isMovieInUserList(movie)"
             class="px-2 py-1 text-sm rounded transition-colors"
             :class="
-              userMoviesStore.userMovies.some(
-                (m) =>
-                  m.title === movie.title &&
-                  m.director === movie.director &&
-                  m.releaseDate === movie.releaseDate,
-              )
+              isMovieInUserList(movie)
                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                 : 'bg-green-600 text-white hover:bg-green-700'
             "
           >
-            {{
-              userMoviesStore.userMovies.some(
-                (m) =>
-                  m.title === movie.title &&
-                  m.director === movie.director &&
-                  m.releaseDate === movie.releaseDate,
-              )
-                ? 'Already Stolen'
-                : 'Steal this'
-            }}
+            {{ isMovieInUserList(movie) ? 'Already Stolen' : 'Steal this' }}
           </button>
         </div>
 

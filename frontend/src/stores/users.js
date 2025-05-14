@@ -87,7 +87,8 @@ export const useUsersStore = defineStore('users', () => {
   }
 
   // Check login status
-  function checkLoginStatus() {
+  async function checkLoginStatus() {
+    console.log('Checking login status')
     const userToken = localStorage.getItem('userToken')
     const userLoggedIn = localStorage.getItem('userLoggedIn') === 'true'
     const storedUsername = localStorage.getItem('username')
@@ -100,7 +101,11 @@ export const useUsersStore = defineStore('users', () => {
       userId.value = storedUserId
       
       // Fetch user's movies if logged in
-      fetchUserMovies()
+      console.log('User is logged in, fetching user movies')
+      await fetchUserMovies()
+      console.log(`Loaded ${userMovies.value.length} movies for user`)
+    } else {
+      console.log('User is not logged in')
     }
   }
 
@@ -121,9 +126,13 @@ export const useUsersStore = defineStore('users', () => {
 
   // Fetch user's movies from the server
   async function fetchUserMovies() {
-    if (!isLoggedIn.value || !token.value) return
+    if (!isLoggedIn.value || !token.value) {
+      console.log('Cannot fetch user movies: User not logged in')
+      return
+    }
     
     try {
+      console.log('Fetching user movies from server')
       const response = await axios.get(`${API_URL}/user/movies`, {
         headers: {
           Authorization: `Bearer ${token.value}`
@@ -132,6 +141,7 @@ export const useUsersStore = defineStore('users', () => {
       
       // Update the user's movies in the store
       userMovies.value = response.data
+      console.log(`Fetched ${userMovies.value.length} movies for user`)
     } catch (error) {
       console.error('Error fetching user movies:', error)
     }
@@ -188,6 +198,8 @@ export const useUsersStore = defineStore('users', () => {
     }
     
     try {
+      console.log('Adding movie to user list:', movie)
+      
       // Add movie to the database
       const response = await axios.post(
         `${API_URL}/user/movies`,
@@ -211,17 +223,20 @@ export const useUsersStore = defineStore('users', () => {
         }
       )
       
-      // Add to local state
-      userMovies.value.push(movie)
+      console.log('Movie added successfully, refreshing user movies')
+      
+      // Refresh user's movies from the server instead of directly pushing to local state
+      await fetchUserMovies()
       
       return true
     } catch (error) {
       console.error('Error adding movie to user list:', error)
       
-      // If the error is that the movie is already in the list, add it to local state anyway
+      // If the error is that the movie is already in the list, refresh the user's movies
       if (error.response && error.response.status === 400 && 
           error.response.data.message === 'Movie already in your list') {
-        userMovies.value.push(movie)
+        console.log('Movie already in user list, refreshing user movies')
+        await fetchUserMovies()
         return true
       }
       

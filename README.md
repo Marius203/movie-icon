@@ -47,53 +47,64 @@ A full-stack web application for managing and exploring a collection of movies. 
 - RESTful API
 - Multer for file uploads
 
-## Getting Started
+## Docker Setup
+
+This project is containerized using Docker, making it easy to run the entire application stack with a single command.
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
-- npm (v6 or higher)
-
-### Installation
-
-1. Clone the repository:
-
-```bash
-git clone <repository-url>
-cd movie-icon
-```
-
-2. Install frontend dependencies:
-
-```bash
-cd frontend
-npm install
-```
-
-3. Install backend dependencies:
-
-```bash
-cd ../backend
-npm install
-```
+- [Docker](https://www.docker.com/get-started)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
 ### Running the Application
 
-1. Start the backend server:
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd movie-icon
+   ```
 
-```bash
-cd backend
-npm start
-```
+2. Start the application using Docker Compose:
+   ```bash
+   docker-compose up
+   ```
 
-2. Start the frontend development server:
+   This will start all services:
+   - Frontend (Vue.js) on http://localhost:5173
+   - Backend (Node.js) on http://localhost:3000
+   - PostgreSQL database on port 5432
 
-```bash
-cd frontend
-npm run dev
-```
+3. To run in detached mode (in the background):
+   ```bash
+   docker-compose up -d
+   ```
 
-3. Open your browser and navigate to `http://localhost:5173`
+4. To stop the application:
+   ```bash
+   docker-compose down
+   ```
+
+### Development Workflow
+
+The Docker setup includes volume mounts for both frontend and backend, allowing you to make changes to the code without rebuilding the containers.
+
+- Frontend code changes will be automatically reflected in the browser
+- Backend code changes will require a restart of the backend service:
+  ```bash
+  docker-compose restart backend
+  ```
+
+### Database
+
+The PostgreSQL database data is persisted in a Docker volume named `postgres-data`. This ensures that your data remains even if you stop or remove the containers.
+
+### Environment Variables
+
+The application uses environment variables for configuration. These are set in the `docker-compose.yml` file. You can modify these values as needed.
+
+## Manual Setup (without Docker)
+
+If you prefer to run the application without Docker, please refer to the individual README files in the frontend and backend directories.
 
 ## API Endpoints
 

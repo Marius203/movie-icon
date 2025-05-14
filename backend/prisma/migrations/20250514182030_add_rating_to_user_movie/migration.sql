@@ -11,6 +11,7 @@ CREATE TABLE "Users" (
     CONSTRAINT "Users_pkey" PRIMARY KEY ("id")
 );
 
+
 -- CreateTable
 CREATE TABLE "UserMovie" (
     "id" SERIAL NOT NULL,

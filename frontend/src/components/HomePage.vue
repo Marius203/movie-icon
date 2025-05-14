@@ -4,10 +4,33 @@ import { useRouter } from 'vue-router'
 import { useMoviesStore } from '@/stores/movies'
 import { useUsersStore } from '@/stores/users'
 import MovieDetailsPopup from './MovieDetailsPopup.vue'
+import NavigationBar from './NavigationBar.vue'
 
 const router = useRouter()
 const moviesStore = useMoviesStore()
 const userMoviesStore = useUsersStore()
+
+// Navigation bar visibility
+const showNavbar = ref(false)
+const navbarTimeout = ref(null)
+
+// Handle mouse movement to show/hide navbar
+const handleMouseMove = (event) => {
+  // Show navbar when mouse is near the top of the screen (within 50px)
+  if (event.clientY < 50) {
+    showNavbar.value = true
+    
+    // Clear any existing timeout
+    if (navbarTimeout.value) {
+      clearTimeout(navbarTimeout.value)
+    }
+  } else {
+    // Hide navbar after a short delay when mouse moves away from top
+    navbarTimeout.value = setTimeout(() => {
+      showNavbar.value = false
+    }, 1000) // 1 second delay before hiding
+  }
+}
 
 // Search functionality
 const searchQuery = ref('')
@@ -93,10 +116,17 @@ const handleClickOutside = (event) => {
 // Add and remove event listener for clicking outside
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  document.addEventListener('mousemove', handleMouseMove)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('mousemove', handleMouseMove)
+  
+  // Clear any existing timeout
+  if (navbarTimeout.value) {
+    clearTimeout(navbarTimeout.value)
+  }
 })
 </script>
 
@@ -117,6 +147,14 @@ onUnmounted(() => {
   >
     <!-- Overlay to ensure text readability over image -->
     <div class="absolute inset-0 bg-black opacity-50"></div>
+    
+    <!-- Navigation Bar (appears on hover) -->
+    <div 
+      class="absolute top-0 left-0 right-0 z-20 transition-opacity duration-300"
+      :class="{ 'opacity-100': showNavbar, 'opacity-0': !showNavbar }"
+    >
+      <NavigationBar />
+    </div>
 
     <!-- Content -->
     <div class="relative z-10 text-center">

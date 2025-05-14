@@ -19,7 +19,7 @@ const handleLogin = async () => {
   
   try {
     // First check if it's an admin login
-    const adminResult = adminStore.login(username.value, password.value)
+    const adminResult = await adminStore.login(username.value, password.value)
 
     if (adminResult.success) {
       // If admin login successful, redirect to admin dashboard
