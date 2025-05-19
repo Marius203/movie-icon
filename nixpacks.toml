@@ -2,8 +2,26 @@
 # Please deploy each part separately by specifying the root directory
 # See DEPLOYMENT.md for detailed instructions
 
-[phases.setup]
+# Backend configuration
+[backend]
+rootDirectory = "backend"
+[backend.phases.setup]
 nixPkgs = ["nodejs"]
+[backend.phases.install]
+cmds = ["npm install"]
+[backend.phases.build]
+cmds = ["npx prisma generate"]
+[backend.start]
+cmd = "npm start"
 
-[phases.install]
-cmds = ["echo 'This is a monorepo. Please deploy frontend and backend separately.'"] 
+# Frontend configuration
+[frontend]
+rootDirectory = "frontend"
+[frontend.phases.setup]
+nixPkgs = ["nodejs"]
+[frontend.phases.install]
+cmds = ["npm install"]
+[frontend.phases.build]
+cmds = ["npm run build"]
+[frontend.start]
+cmd = "npm run preview" 
