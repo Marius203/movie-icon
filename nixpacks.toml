@@ -1,27 +1,15 @@
 # This is a monorepo with separate frontend and backend
-# Please deploy each part separately by specifying the root directory
+# We're deploying only the backend to Railway
 # See DEPLOYMENT.md for detailed instructions
 
-# Backend configuration
-[backend]
-rootDirectory = "backend"
-[backend.phases.setup]
+[phases.setup]
 nixPkgs = ["nodejs"]
-[backend.phases.install]
-cmds = ["npm install"]
-[backend.phases.build]
-cmds = ["npx prisma generate"]
-[backend.start]
-cmd = "npm start"
 
-# Frontend configuration
-[frontend]
-rootDirectory = "frontend"
-[frontend.phases.setup]
-nixPkgs = ["nodejs"]
-[frontend.phases.install]
+[phases.install]
 cmds = ["npm install"]
-[frontend.phases.build]
-cmds = ["npm run build"]
-[frontend.start]
-cmd = "npm run preview" 
+
+[phases.build]
+cmds = ["npx prisma generate"]
+
+[start]
+cmd = "npm start" 
