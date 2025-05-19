@@ -7,8 +7,6 @@ rootDirectory = "backend"
 startCommand = "npx prisma migrate deploy && npm start"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 10
 
 [deploy.env]
 PORT = "3000" 
