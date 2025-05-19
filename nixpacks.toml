@@ -1,0 +1,9 @@
+# This is a monorepo with separate frontend and backend
+# Please deploy each part separately by specifying the root directory
+# See DEPLOYMENT.md for detailed instructions
+
+[phases.setup]
+nixPkgs = ["nodejs"]
+
+[phases.install]
+cmds = ["echo 'This is a monorepo. Please deploy frontend and backend separately.'"] 
