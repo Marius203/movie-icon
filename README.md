@@ -59,22 +59,26 @@ This project is containerized using Docker, making it easy to run the entire app
 ### Running the Application
 
 1. Clone the repository:
+
    ```bash
    git clone <repository-url>
    cd movie-icon
    ```
 
 2. Start the application using Docker Compose:
+
    ```bash
    docker-compose up
    ```
 
    This will start all services:
+
    - Frontend (Vue.js) on http://localhost:5173
    - Backend (Node.js) on http://localhost:3000
    - PostgreSQL database on port 5432
 
 3. To run in detached mode (in the background):
+
    ```bash
    docker-compose up -d
    ```
@@ -159,3 +163,93 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Tailwind CSS for the utility-first CSS framework
 - Chart.js for the data visualization library
 - Faker.js for the mock data generation
+
+## Deployment to Azure
+
+This project includes scripts to help you deploy the application to Azure. There are two main deployment options:
+
+### Option 1: Automated Deployment
+
+Use the `azure-deploy.ps1` PowerShell script for an automated deployment process:
+
+```powershell
+.\azure-deploy.ps1
+```
+
+This script will:
+
+1. Check for Azure CLI installation
+2. Log you into Azure
+3. Create a resource group
+4. Deploy the application using Azure Container Apps
+5. Output the application URL
+
+### Option 2: Manual Deployment
+
+If you prefer to deploy manually, follow the instructions in the `AZURE-DEPLOY.md` file.
+
+### Testing the Deployment
+
+After deployment, you can verify that everything is working correctly by running the test script:
+
+```powershell
+.\test-deployment.ps1
+```
+
+This script will:
+
+1. Check if the application is accessible
+2. Verify the container app status
+3. Display the application URL
+
+### Cleanup
+
+To clean up all Azure resources created by the deployment, use the `azure-cleanup.ps1` script:
+
+```powershell
+.\azure-cleanup.ps1
+```
+
+### Troubleshooting
+
+If you encounter any issues during deployment, please refer to the `TROUBLESHOOTING.md` file for common problems and their solutions.
+
+## Project Structure
+
+- `frontend/`: Contains the React frontend application
+- `backend/`: Contains the Node.js backend application
+- `azure-deploy.ps1`: Automated deployment script
+- `azure-cleanup.ps1`: Cleanup script
+- `test-deployment.ps1`: Test script for verifying deployment
+- `AZURE-DEPLOY.md`: Manual deployment guide
+- `TROUBLESHOOTING.md`: Guide for troubleshooting common issues
+
+## Prerequisites
+
+- Azure account with an active subscription
+- Azure CLI installed
+- Docker installed (for local development)
+- Node.js and npm (for local development)
+
+## Local Development
+
+To run the application locally:
+
+1. Start the backend:
+
+   ```bash
+   cd backend
+   npm install
+   npm start
+   ```
+
+2. Start the frontend:
+   ```bash
+   cd frontend
+   npm install
+   npm start
+   ```
+
+## License
+
+This project is licensed under the MIT License.
