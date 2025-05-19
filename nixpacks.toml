@@ -2,6 +2,8 @@
 # We're deploying only the backend to Railway
 # See DEPLOYMENT.md for detailed instructions
 
+rootDirectory = "backend"
+
 [phases.setup]
 nixPkgs = ["nodejs"]
 
@@ -12,4 +14,4 @@ cmds = ["npm install"]
 cmds = ["npx prisma generate"]
 
 [start]
-cmd = "npm start" 
+cmd = "npx prisma migrate deploy && npm start" 

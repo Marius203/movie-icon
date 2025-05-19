@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { API_BASE_URL } from '@/config/api'
 
 export const useUsersStore = defineStore('users', () => {
   // User authentication state
@@ -18,15 +19,12 @@ export const useUsersStore = defineStore('users', () => {
   // Movies per page option for the user's list
   const moviesPerPage = ref(5)
 
-  // API base URL
-  const API_URL = 'http://localhost:3000'
-
   // Login function
   async function login(username, password) {
     try {
-      const response = await axios.post(`${API_URL}/login`, {
+      const response = await axios.post(`${API_BASE_URL}/login`, {
         username,
-        password
+        password,
       })
 
       if (response.data.token) {
@@ -35,16 +33,16 @@ export const useUsersStore = defineStore('users', () => {
         currentUsername.value = response.data.user.username
         userId.value = response.data.user.id
         isLoggedIn.value = true
-        
+
         // Store in localStorage for persistence
         localStorage.setItem('userToken', response.data.token)
         localStorage.setItem('userLoggedIn', 'true')
         localStorage.setItem('username', response.data.user.username)
         localStorage.setItem('userId', response.data.user.id)
-        
+
         // Fetch user's movies after login
         await fetchUserMovies()
-        
+
         return true
       }
       return false
@@ -57,18 +55,18 @@ export const useUsersStore = defineStore('users', () => {
   // Register function
   async function register({ username, email, password }) {
     try {
-      const response = await axios.post(`${API_URL}/register`, {
+      const response = await axios.post(`${API_BASE_URL}/register`, {
         username,
         email,
-        password
+        password,
       })
-      
+
       return { success: true, message: response.data.message }
     } catch (error) {
       console.error('Registration error:', error)
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Registration failed. Please try again.' 
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Registration failed. Please try again.',
       }
     }
   }
@@ -93,13 +91,13 @@ export const useUsersStore = defineStore('users', () => {
     const userLoggedIn = localStorage.getItem('userLoggedIn') === 'true'
     const storedUsername = localStorage.getItem('username')
     const storedUserId = localStorage.getItem('userId')
-    
+
     if (userToken && userLoggedIn && storedUsername) {
       token.value = userToken
       isLoggedIn.value = true
       currentUsername.value = storedUsername
       userId.value = storedUserId
-      
+
       // Fetch user's movies if logged in
       console.log('User is logged in, fetching user movies')
       await fetchUserMovies()
@@ -112,10 +110,10 @@ export const useUsersStore = defineStore('users', () => {
   // Get user profile
   async function getUserProfile() {
     try {
-      const response = await axios.get(`${API_URL}/user/profile`, {
+      const response = await axios.get(`${API_BASE_URL}/user/profile`, {
         headers: {
-          Authorization: `Bearer ${token.value}`
-        }
+          Authorization: `Bearer ${token.value}`,
+        },
       })
       return response.data
     } catch (error) {
@@ -130,15 +128,15 @@ export const useUsersStore = defineStore('users', () => {
       console.log('Cannot fetch user movies: User not logged in')
       return
     }
-    
+
     try {
       console.log('Fetching user movies from server')
-      const response = await axios.get(`${API_URL}/user/movies`, {
+      const response = await axios.get(`${API_BASE_URL}/user/movies`, {
         headers: {
-          Authorization: `Bearer ${token.value}`
-        }
+          Authorization: `Bearer ${token.value}`,
+        },
       })
-      
+
       // Update the user's movies in the store
       userMovies.value = response.data
       console.log(`Fetched ${userMovies.value.length} movies for user`)
@@ -196,50 +194,55 @@ export const useUsersStore = defineStore('users', () => {
       console.error('Cannot add movie: User not logged in')
       return false
     }
-    
+
     try {
       console.log('Adding movie to user list:', movie)
-      
+
       // Add movie to the database
       const response = await axios.post(
-        `${API_URL}/user/movies`,
+        `${API_BASE_URL}/user/movies`,
         {
           movieId: movie.id || null,
           rating: movie.rating || null,
-          movie: movie.id ? null : {
-            title: movie.title,
-            director: movie.director,
-            releaseDate: movie.releaseDate,
-            rating: movie.rating,
-            description: movie.description,
-            poster: movie.poster,
-            trailer: movie.trailer
-          }
+          movie: movie.id
+            ? null
+            : {
+                title: movie.title,
+                director: movie.director,
+                releaseDate: movie.releaseDate,
+                rating: movie.rating,
+                description: movie.description,
+                poster: movie.poster,
+                trailer: movie.trailer,
+              },
         },
         {
           headers: {
-            Authorization: `Bearer ${token.value}`
-          }
-        }
+            Authorization: `Bearer ${token.value}`,
+          },
+        },
       )
-      
+
       console.log('Movie added successfully, refreshing user movies')
-      
+
       // Refresh user's movies from the server instead of directly pushing to local state
       await fetchUserMovies()
-      
+
       return true
     } catch (error) {
       console.error('Error adding movie to user list:', error)
-      
+
       // If the error is that the movie is already in the list, refresh the user's movies
-      if (error.response && error.response.status === 400 && 
-          error.response.data.message === 'Movie already in your list') {
+      if (
+        error.response &&
+        error.response.status === 400 &&
+        error.response.data.message === 'Movie already in your list'
+      ) {
         console.log('Movie already in user list, refreshing user movies')
         await fetchUserMovies()
         return true
       }
-      
+
       return false
     }
   }
@@ -250,31 +253,26 @@ export const useUsersStore = defineStore('users', () => {
       console.error('Cannot remove movie: User not logged in')
       return false
     }
-    
+
     // Use the sorted index directly since we are operating on the user's potentially sorted list
     if (index >= 0 && index < sortedMovies.value.length) {
       const movieToRemove = sortedMovies.value[index]
-      
+
       try {
         // Remove from the database
-        await axios.delete(
-          `${API_URL}/user/movies/${movieToRemove.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token.value}`
-            }
-          }
-        )
-        
+        await axios.delete(`${API_BASE_URL}/user/movies/${movieToRemove.id}`, {
+          headers: {
+            Authorization: `Bearer ${token.value}`,
+          },
+        })
+
         // Remove from local state
-        const originalIndex = userMovies.value.findIndex(
-          (m) => m.id === movieToRemove.id
-        )
-        
+        const originalIndex = userMovies.value.findIndex((m) => m.id === movieToRemove.id)
+
         if (originalIndex !== -1) {
           userMovies.value.splice(originalIndex, 1)
         }
-        
+
         return true
       } catch (error) {
         console.error('Error removing movie from user list:', error)
@@ -292,32 +290,30 @@ export const useUsersStore = defineStore('users', () => {
       console.error('Cannot update rating: User not logged in')
       return false
     }
-    
+
     // Use the sorted index directly
     if (index >= 0 && index < sortedMovies.value.length) {
       const movieToUpdate = sortedMovies.value[index]
-      
+
       try {
         // Update in the database
         await axios.put(
-          `${API_URL}/user/movies/${movieToUpdate.id}`,
+          `${API_BASE_URL}/user/movies/${movieToUpdate.id}`,
           { rating },
           {
             headers: {
-              Authorization: `Bearer ${token.value}`
-            }
-          }
+              Authorization: `Bearer ${token.value}`,
+            },
+          },
         )
-        
+
         // Update in local state
-        const originalIndex = userMovies.value.findIndex(
-          (m) => m.id === movieToUpdate.id
-        )
-        
+        const originalIndex = userMovies.value.findIndex((m) => m.id === movieToUpdate.id)
+
         if (originalIndex !== -1) {
           userMovies.value[originalIndex].rating = rating
         }
-        
+
         return true
       } catch (error) {
         console.error('Error updating movie rating:', error)
@@ -349,6 +345,6 @@ export const useUsersStore = defineStore('users', () => {
     getUserProfile,
     fetchUserMovies,
     token,
-    userId
+    userId,
   }
 })

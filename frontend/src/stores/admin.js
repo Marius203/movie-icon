@@ -15,7 +15,7 @@ export const useAdminStore = defineStore('admin', () => {
       // Use the backend login endpoint
       const response = await axios.post(`${API_BASE_URL}/login`, {
         username,
-        password
+        password,
       })
 
       // Check if the user is an admin
@@ -23,12 +23,12 @@ export const useAdminStore = defineStore('admin', () => {
         isAdmin.value = true
         adminUsername.value = response.data.user.username
         adminToken.value = response.data.token
-        
+
         // Store admin info in localStorage
         localStorage.setItem('adminLoggedIn', 'true')
         localStorage.setItem('adminToken', adminToken.value)
         localStorage.setItem('adminUsername', response.data.user.username)
-        
+
         return { success: true, isAdmin: true }
       }
 
@@ -45,7 +45,7 @@ export const useAdminStore = defineStore('admin', () => {
     isAdmin.value = false
     adminUsername.value = ''
     adminToken.value = ''
-    
+
     // Clear admin data from localStorage
     localStorage.removeItem('adminLoggedIn')
     localStorage.removeItem('adminToken')
@@ -57,7 +57,7 @@ export const useAdminStore = defineStore('admin', () => {
     const adminLoggedIn = localStorage.getItem('adminLoggedIn') === 'true'
     const storedToken = localStorage.getItem('adminToken')
     const storedUsername = localStorage.getItem('adminUsername')
-    
+
     if (adminLoggedIn && storedToken && storedUsername) {
       isAdmin.value = true
       adminUsername.value = storedUsername
@@ -77,6 +77,6 @@ export const useAdminStore = defineStore('admin', () => {
     login,
     logout,
     checkAdminStatus,
-    getAdminToken
+    getAdminToken,
   }
 })

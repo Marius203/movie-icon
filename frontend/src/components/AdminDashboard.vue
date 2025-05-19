@@ -37,7 +37,9 @@ const isGenerating = ref(false)
 
 // WebSocket functions
 const connectWebSocket = () => {
-  ws.value = new WebSocket('ws://localhost:3000')
+  // Use the API_BASE_URL for WebSocket connection
+  const wsUrl = API_BASE_URL.replace('http', 'ws').replace('https', 'wss')
+  ws.value = new WebSocket(wsUrl)
 
   ws.value.onopen = () => {
     console.log('WebSocket connected')

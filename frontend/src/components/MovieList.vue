@@ -86,20 +86,20 @@ const isMovieInUserList = (movie) => {
     (m) =>
       m.title === movie.title &&
       m.director === movie.director &&
-      m.releaseDate === movie.releaseDate
+      m.releaseDate === movie.releaseDate,
   )
 }
 
 // Load initial movies and connect WebSocket
 onMounted(async () => {
   loading.value = true
-  
+
   // First, ensure user's movies are loaded
   if (userMoviesStore.isLoggedIn) {
     console.log('Fetching user movies on MovieList mount')
     await userMoviesStore.fetchUserMovies()
   }
-  
+
   // Then fetch movies from the database
   await moviesStore.fetchMovies(limit.value, offset.value)
   displayedMovies.value = [...moviesStore.sortedMovies]
@@ -225,7 +225,7 @@ const handleStealMovie = async (movie) => {
   // Add a deep copy of the movie object to avoid reactivity issues
   const movieCopy = JSON.parse(JSON.stringify(movie))
   const success = await userMoviesStore.addMovie(movieCopy)
-  
+
   if (success) {
     alert(`${movie.title} 'stolen' and added to your personal list!`)
     handlePopupClose()
