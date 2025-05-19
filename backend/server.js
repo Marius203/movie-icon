@@ -5,6 +5,8 @@ const path = require("path");
 const multer = require("multer"); // Add this for file uploads
 const { startMovieGeneration } = require("./movieGenerator");
 const WebSocket = require("ws");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 const PORT = 3000;
